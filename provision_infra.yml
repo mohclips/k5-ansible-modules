@@ -1,0 +1,102 @@
+#!/usr/bin/env ansible-playbook
+# vim: noai:ts=2:sw=2:et
+---
+
+- name: "Create network infrastructure"
+
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  # batch - run 10 tasks at a time when looped
+  serial: 10
+
+
+  vars:
+    # use the include_vars instead
+    # vars/
+
+    #
+    # FLAGS:  flags to turn on/off features
+    #
+    provision_network: true
+
+
+  tasks:
+    # we pull in our vars
+    - include_vars: 
+        dir: "vars"
+        depth: 1
+
+    - block:
+       #   Ok, the following code is a little complex, but there is a reason for this.
+       # It makes it a heck of a lot easier to write the vars above in a way that most engineers will
+       # recognise as firewall rules.
+       #   You should be able to lift all this code and copy/paste it into yours with no changes below.
+       # All you need to do is change the above vars.
+       #   The cool stuff in Ansible is the 'with_subelements' loop, which allows for a directed nested loop.
+
+       - name: "Create a new security group"
+         os_security_group:
+         # https://docs.ansible.com/ansible/os_security_group_module.html
+           state: present
+           name: "{{ item.0.name }}"
+           description: "{{ item.0.description }}"
+         with_subelements: 
+           - "{{ security_groups }}"
+           - rules
+
+       - name: "Create a new SG rules"
+         os_security_group_rule:
+           # https://docs.ansible.com/ansible/os_security_group_rule_module.html
+           security_group: "{{ item.0.name }}"
+           remote_ip_prefix: "{{ item.1.source }}"
+           protocol: "{{ item.1.protocol }}"
+           port_range_min: "{{ item.1.port }}"
+           port_range_max: "{{ item.1.port }}"
+           direction: "{{ item.1.direction }}"
+         with_subelements: 
+           - "{{ security_groups }}"
+           - rules
+
+
+       # create Networks and Subnets
+       # we use an include to loop over a number of tasks at once
+       - name: "Create Networks and Subnets"
+         include: create-net-include.yml
+         with_items: "{{ networks }}"
+         loop_control:
+           loop_var: outer_item
+
+       # link the Network and Subnets together on one Router
+       - name: "Create Router"
+         # https://docs.ansible.com/ansible/os_router_module.html
+         os_router:
+           state: present
+           name: "{{ router.name }}"
+           interfaces:
+             "{{ router.subnets }}"
+
+       - name: "Router - connect subnets"
+         # https://docs.ansible.com/ansible/os_router_module.html
+         os_router:
+           state: present
+           name: "{{ router.name }}"
+           network: "{{ router.ext_net }}"
+
+      when: provision_network == true 
+
+    # create a Jump sever
+    # this is done separately so that the jump server
+    #  can be re-created each night for security purposes
+    - name: "Create Jump box"
+      include: create-jumpserver-include.yml
+
+
+    #
+    # create servers
+    #
+#    - name: "Create Infrastructure Servers"
+#      include: create-infra-servers-include.yml
+
+
