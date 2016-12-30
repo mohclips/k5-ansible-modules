@@ -13,8 +13,8 @@ retries_delay: 5
 
 region:
   name: "uk-1"
-  az: "uk-1b"
-  ssh_keypair: "NickCross-uk1b"
+  az: "uk-1a"
+  ssh_keypair: "NickCross1a"
 
 #
 # REMEMBER:
@@ -26,59 +26,61 @@ region:
 #
 
 security_groups:
-  - name: "nx-az1b-jumpbox"
+  - name: "nx-az1a-jumpbox"
     description: "Rules for the Proxy Lan Jump Box only"
     rules:
       # source here SHOULD BE your source device, NOT any old device on the internet
       - { comment: "any_ssh", source: "0.0.0.0/0", protocol: "tcp", port: "22", direction: "ingress" }
       - { comment: "any_icmp", source: "0.0.0.0/0", protocol: "icmp", port: "-1", direction: "ingress" }
 
-  - name: "nx-az1b-proxylan"
+  - name: "nx-az1a-proxylan"
     description: "Rules for the Proxy Lan but not the Jump Box"
     rules:
       - { comment: "any_80", source: "0.0.0.0/0", protocol: "tcp", port: "80", direction: "ingress" }
       - { comment: "any_443", source: "0.0.0.0/0", protocol: "tcp", port: "443", direction: "ingress" }
-      - { comment: "proxylan_icmp", source: "10.77.1.0/0", protocol: "icmp", port: "-1", direction: "ingress" }
+      - { comment: "proxylan_icmp", source: "10.70.1.0/0", protocol: "icmp", port: "-1", direction: "ingress" }
     
-  - name: "nx-az1b-appslan"
+  - name: "nx-az1a-appslan"
     description: "Rules for the Apps Lan"
     rules: 
-      - { comment: "jumpbox_ssh", source: "10.77.1.253/32", protocol: "tcp", port: "22", direction: "ingress" }
-      - { comment: "proxylan_80", source: "10.77.1.0/0", protocol: "tcp", port: "80", direction: "ingress" }
-      - { comment: "proxylan_443", source: "10.77.1.0/0", protocol: "tcp", port: "443", direction: "ingress" }
-      - { comment: "appslan_icmp", source: "10.77.2.0/0", protocol: "icmp", port: "-1", direction: "ingress" }
-      - { comment: "proxylan_icmp", source: "10.77.1.0/0", protocol: "icmp", port: "-1", direction: "ingress" }
+      - { comment: "jumpbox_ssh", source: "10.70.1.253/32", protocol: "tcp", port: "22", direction: "ingress" }
+      - { comment: "proxylan_80", source: "10.70.1.0/0", protocol: "tcp", port: "80", direction: "ingress" }
+      - { comment: "proxylan_443", source: "10.70.1.0/0", protocol: "tcp", port: "443", direction: "ingress" }
+      - { comment: "appslan_icmp", source: "10.70.2.0/0", protocol: "icmp", port: "-1", direction: "ingress" }
+      - { comment: "proxylan_icmp", source: "10.70.1.0/0", protocol: "icmp", port: "-1", direction: "ingress" }
            
-  - name: "nx-az1b-dblan"
+  - name: "nx-az1a-dblan"
     description: "Rules for the DB Lan"
     rules: 
-      - { comment: "jumpbox_ssh", source: "10.77.1.253/32", protocol: "tcp", port: "22", direction: "ingress" }
-      - { comment: "appslan_mysql", source: "10.77.1.0/0", protocol: "tcp", port: "3306", direction: "ingress" }
-      - { comment: "dblan_mysql", source: "10.77.3.0/0", protocol: "tcp", port: "3306", direction: "ingress" }
-      - { comment: "proxylan_icmp", source: "10.77.2.0/0", protocol: "icmp", port: "-1", direction: "ingress" }
-      - { comment: "dblan_icmp", source: "10.77.3.0/0", protocol: "icmp", port: "-1", direction: "ingress" }
+      - { comment: "jumpbox_ssh", source: "10.70.1.253/32", protocol: "tcp", port: "22", direction: "ingress" }
+      - { comment: "appslan_mysql", source: "10.70.1.0/0", protocol: "tcp", port: "3306", direction: "ingress" }
+      - { comment: "dblan_mysql", source: "10.70.3.0/0", protocol: "tcp", port: "3306", direction: "ingress" }
+      - { comment: "proxylan_icmp", source: "10.70.2.0/0", protocol: "icmp", port: "-1", direction: "ingress" }
+      - { comment: "dblan_icmp", source: "10.70.3.0/0", protocol: "icmp", port: "-1", direction: "ingress" }
 
 networks: 
-  - name: "nx-network-proxylan"
+  - name: "nx-network-1a-proxylan"
     external: False
-    subnet: "nx-subnet-proxylan"
-    cidr: "172.16.10.0/24"
-  - name: "nx-network-appslan"
+    subnet: "nx-subnet-1a-proxylan"
+    cidr: "10.70.1.0/24"
+  - name: "nx-network-1a-appslan"
     external: False
-    subnet : "nx-subnet-appslan"
-    cidr: "172.16.11.0/24"
-  - name: "nx-network-dblan"
+    subnet : "nx-subnet-1a-appslan"
+    cidr: "10.70.2.0/24"
+  - name: "nx-network-1a-dblan"
     external: False
-    subnet: "nx-subnet-dblan"
-    cidr: "172.16.12.0/24"
+    subnet: "nx-subnet-1a-dblan"
+    cidr: "10.70.3.0/24"
   
 router:
-  name: "nx-router-demo01"
+  name: "nx-router-1a-demo01"
   subnets: 
     - "{{ networks.0.subnet }}"
     - "{{ networks.1.subnet }}"
     - "{{ networks.2.subnet }}"
-  ext_net: "inf_az2_ext-net01"
+  ext_net: "inf_az1_ext-net02"      #AZ change here
+  stackname: "nx-router-1a-demo01_stack"
+  heatstack_template: "stacks/router_heatstack.yml"
 
 k5_images:
   ubuntu_1404: 
@@ -94,27 +96,28 @@ jumpserver:
   image: "{{ k5_images.ubuntu_1404.name }}"
   flavor: "S-1"
   volume_size: "{{ k5_images.ubuntu_1404.min_size }}"
-  name: "nx-demo01-jumpserver"
+  name: "nx-demo01-1a-jumpserver"
   ansible_user: "ubuntu"
   ansible_connection: "ssh"
-
+  fixed_ip: "10.70.1.253"   # probably should be defined elsewhere and referenced.
+  security_group: "nx-az1a-jumpbox"
 
 servers:
   - s1:
-    name: "nx-app01"
+    name: "nx-1a-app01"
     image: "{{ k5_images.ubuntu_1404.name }}"
     flavor: "S-1"
     volume_size: "{{ k5_images.ubuntu_1404.min_size }}"
-    subnet: "nx-appslan"
+    subnet: "nx-1a-appslan"
     ansible_user: "ubuntu"
     ansible_connection: "ssh"
 
   - s2:
-    name: "nx-centos72"
+    name: "nx-1a-centos72"
     image: "CentOS 7.2 64bit (English) 01"
     flavor: "S-1"
     volume_size: 30
-    subnet: "nx-appslan"
+    subnet: "nx-1a-appslan"
     ansible_user: "ubuntu"
     ansible_connection: "ssh"
 

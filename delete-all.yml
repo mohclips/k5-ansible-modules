@@ -82,22 +82,32 @@
       with_items: "{{ k5_instances.results }}"
 
 
-    # link the Network and Subnets together on one Router
-    - name: "Delete Router"
-      # https://docs.ansible.com/ansible/os_router_module.html
-      os_router:
-        state: absent 
-        name: "{{ router.name }}"
+#    - name: "Delete Router"
+#      # https://docs.ansible.com/ansible/os_router_module.html
+#      os_router:
+#        state: absent 
+#        name: "{{ router.name }}"
+
+    - name: "Check if this router is already created via the openstack CLI"
+      shell: openstack router list | egrep " {{ router.name }} " # space delimited the name incase of mismatch
+      register: routers_result
+      ignore_errors: true   # skip any errors here
+
+    - name: "Delete the router via openstack CLI"
+      command: openstack router delete "{{ router.name }}"
+      ignore_errors: true   # skip any errors here
+      when: routers_result|success
 
 
-    # create Networks and Subnets
+    # delete Networks and Subnets
     # we use an include to loop over a number of tasks at once
     - name: "Delete Subnets and Networks"
       include: delete-net-include.yml
       with_items: "{{ networks }}"
       loop_control:
         loop_var: outer_item
-
+      # TODO report no_log not working in this loop
+      no_log: True
 
     - name: "Delete security groups"
       os_security_group:
@@ -107,5 +117,5 @@
       with_subelements: 
         - "{{ security_groups }}"
         - rules
-
+      no_log: True
 

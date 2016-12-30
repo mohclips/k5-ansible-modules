@@ -1,5 +1,6 @@
-NickCross-ulk1b.pem
+*.pem
 old
 openrc
 .gitignore
-
+*.pyc
+*.retry

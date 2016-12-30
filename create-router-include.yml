@@ -1,0 +1,80 @@
+# vim: noai:ts=2:sw=2:et
+---
+
+
+#    # THIS DOES NOT WORK - the command does run but does not honour the AZ
+#    - name: "Create Router"
+#      # https://docs.ansible.com/ansible/os_router_module.html
+#      os_router:
+#        state: present
+#        name: "test-az1a"
+#        availability_zone: "uk-1a"
+
+#    # THIS DOES NOT WORK - the command does run and complete on the remote, but does not exit on the local - infinite loop
+#    - name: "Heat Stack to create a router on a specific AZ"
+#      # https://docs.ansible.com/ansible/os_stack_module.html
+#      os_stack:
+#        name: "Create_a_router_in_az" # no spaces in name
+#        state: present
+#        template: "router_heatstack.yml"
+#        parameters:
+#            router_name: "test-rtr-1a"
+#            az: "uk-1a"
+#        timeout: 60   # 60s timeout    
+
+
+    - name: "Check openstack CLI exists"
+      stat:
+        path: /usr/local/bin/openstack
+      register: op
+    - fail: msg="openstack CLI needs to be installed locally"
+      when: op.stat.exists == False
+
+
+    - name: "Check if this router is already created via the openstack CLI"
+      shell: openstack router list | egrep " {{ router.name }} .*ACTIVE.*UP" # space delimited the name incase of mismatch
+      register: routers_result
+      ignore_errors: true   # skip any errors here
+
+
+    - block:
+
+      - name: "Check if our heat stack is already uploaded"
+        command: openstack stack show "{{ router.stackname }}"
+        ignore_errors: true   # skip any errors here
+        register: stack_result
+
+#     # THIS DOES NOT WORK - rollback:no  is not honoured     
+#      - name: "Delete the heat stack script"
+#        os_stack:
+#          name: "{{ router.stackname }}"
+#          state: absent
+#          rollback: no
+#          wait: no
+#        ignore_errors: true   # skip any errors here
+#        when: result|success
+
+      # We have to use the CLI to delete the heat stack script, this works and is fast, but it does not honour rollback:no
+      - name: "Delete Heat Stack on K5 - so we can upload and run it again"
+        command: openstack stack delete --yes "{{ router.stackname }}"
+        when: stack_result|success
+
+      # We have to use the CLI to push up the heat stack, this works and is fast
+      # but we cannot --wait, as it gets stuck in an infinite loop - CREATE_IN_PROGRESS  state changed, CREATE_COMPLETE  state changed 
+      - name: "Create router via openstack CLI"
+        command: "openstack stack create -t {{ router.heatstack_template }} --parameter az={{ region.az }} --parameter router_name={{ router.name }} {{ router.stackname }}"
+
+      # List routers already created and filter by our router   
+      - name: "Wait for router to become ACTIVE and UP via openstack CLI"
+        shell: openstack router list | egrep " {{ router.name }} .*ACTIVE.*UP" # space delimited the name incase of mismatch
+        register: list_result
+        until: list_result.stdout_lines|length > 0
+        retries: 5 # max number of attempts
+        delay: 7 # between retries (command takes 3+ secs to run)
+
+      - debug: var=list_result.stdout_lines
+
+      # block
+      when: routers_result|failed
+
+      

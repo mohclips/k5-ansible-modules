@@ -1,3 +1,4 @@
+# vim: noai:ts=2:sw=2:et
 ---
 
 #
@@ -5,6 +6,15 @@
 #  more often ie. daily , and that it wont affect the actual
 #  service
 #
+
+            - name: "Create port / fixed IP for jump server"
+              os_port:
+                state: present
+                name: "jumpserver_port"
+                network: "{{ networks.0.name }}"
+                fixed_ips:
+                  - ip_address: "{{ jumpserver.fixed_ip }}"
+                security_groups: [ "{{ jumpserver.security_group }}" ]
 
             - name: "Create the jump server"
             # autoip must be no - k5 doesnt allow it at build time
@@ -16,38 +26,42 @@
                 image: "{{ jumpserver.image }}"
                 flavor: "{{ jumpserver.flavor }}"
                 key_name: "{{ region.ssh_keypair }}"
-                network: "{{ networks.0.name }}"
-                security_groups: [ "default" ]
+                #network: "{{ networks.0.name }}"  # not needed if we supply nics (ie. pre created ports)
+                nics:
+                  - "port-name=jumpserver_port"
+                #security_groups: [ "nx-az1b-jumpbox" ] # not needed if we supply nics (ie. pre created ports)
                 volume_size: "{{ jumpserver.volume_size }}"
                 boot_from_volume: yes
                 terminate_volume: yes
                 auto_ip: no
                 meta:
-                  group: "JumpServers" # this works
-                  key_name: "{{ region.ssh_keypair }}" # this works
-                  hostname: "{{ jumpserver.name }}.localdomain" # this does not work
+                  group: "JumpServers"
+                  key_name: "{{ region.ssh_keypair }}" 
 
             # but k5 does actually allow assignment of a floating (public) afterward initial creation
+            # this is by design on k5, that it needs to be a 2-part process
+            # TODO: find doc link to this 'feature'
             - name: "Assign a floating IP"
               os_floating_ip:
                 # https://docs.ansible.com/ansible/os_floating_ip_module.html
                 # bug: https://github.com/ansible/ansible/issues/19620
                 server: "{{ jumpserver.name }}"
+                fixed_address: "{{ jumpserver.fixed_ip }}" # local address to NAT to
+                wait: true
+                timeout: 180
+              register: os_floating_ip
 
-            - name: "Get our jumpserver OpenStack facts"
-              os_server_facts:
-                # filter on just the jumpserver
-                server: "{{ jumpserver.name }}"
-
-            - name: "Show the jumpserver public IP"
-              # dump facts json to screen - first item in the list
-              debug: var=openstack_servers.0.public_v4
-
+            # our external internet IP
+            - debug: var=os_floating_ip.floating_ip.floating_ip_address
 
             #
             # now we have a running server, save the details to a local inventory for later use
             #
             - block:
+              # set a fact to use the external IP in the template later on
+              - set_fact: 
+                  jumpserver_floatingip: "{{ os_floating_ip.floating_ip.floating_ip_address }}"
+
               - name: "add to the running inventory the instance created above"
                 add_host: 
                   hostname: "{{ jumpserver.name }}"
@@ -58,20 +72,26 @@
                   dest="./inventory/jumpservers" 
                   regexp="{{ jumpserver.name }}"
                   insertafter="[jumpservers]" 
-                  line="{{ jumpserver.name }} ansible_host={{ openstack_servers.0.public_v4 }} ansible_user={{ jumpserver.ansible_user }} ansible_connection={{ jumpserver.ansible_connection }}"
+                  line="{{ jumpserver.name }} ansible_host={{ jumpserver_floatingip }} ansible_user={{ jumpserver.ansible_user }} ansible_connection={{ jumpserver.ansible_connection }}"
 
 
               - name: "Wait for instance to listen on port 22"
                 wait_for:
                   state: started
-                  host: "{{ openstack_servers.0.public_v4 }}"
+                  host: "{{ jumpserver_floatingip }}"
                   port: 22
                   delay: 10
                   search_regex: "OpenSSH"
 
-              - debug: msg="**** jump server is LIVE and ready to use ****"
+              - name: "Create/update local ssh_config for jumpserver pass thru"
+                template:
+                  src: ./templates/k5_ssh_config.j2
+                  dest: ./k5_ssh_config
+                delegate_to: localhost    # not needed, but to make this obvious
 
-              when: openstack_servers.0.public_v4 is defined
+              - debug: msg="**** jump server is LIVE and ready to use @ {{ jumpserver_floatingip }} ****"
+
+              when: os_floating_ip.floating_ip.floating_ip_address is defined
 
 
 

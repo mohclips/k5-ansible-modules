@@ -11,15 +11,11 @@
             state: absent
             network_name: "{{ outer_item.name }}"
             name: "{{ outer_item.subnet }}"
-#            cidr: "{{ outer_item.cidr }}"
+          no_log: True
 
         - name: "Delete Network"
           # https://docs.ansible.com/ansible/os_network_module.html
           os_network:
             state: absent
             name: "{{ outer_item.name }}"
-#            external: "{{ outer_item.external }}"
-#            region_name: "{{ region.name }}"
-#            availability_zone: "{{ region.az }}"
-
-
+          no_log: True

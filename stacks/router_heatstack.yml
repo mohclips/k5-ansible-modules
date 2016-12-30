@@ -1,0 +1,27 @@
+heat_template_version: 2013-05-23
+
+description: Short template to create a router on a specified AZ
+
+# Input parameters
+parameters:
+  az:
+    type: string
+    label: Availability Zone
+    description: Region AZ to use
+    default: "uk-1a" 
+  router_name:
+    type: string
+    label: Router Name 
+    description: Name of this router
+    default: "test_router"   
+
+
+resources:
+
+  my_router:
+    type: OS::Neutron::Router
+    properties:
+      availability_zone: { get_param: az }
+      name: { get_param: router_name }
+
+

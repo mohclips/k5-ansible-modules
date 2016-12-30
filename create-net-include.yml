@@ -5,14 +5,34 @@
 # note the "outer_item" to pull in the with_items from the calling playbook
 #
 
-        - name: "Create Network"
-          # https://docs.ansible.com/ansible/os_network_module.html
-          os_network:
-            state: present
-            name: "{{ outer_item.name }}"
-            external: "{{ outer_item.external }}"
-            region_name: "{{ region.name }}"
-            availability_zone: "{{ region.az }}"
+
+#       DOES NOT WORK - does not honour az
+#        - name: "Create Network"
+#          # https://docs.ansible.com/ansible/os_network_module.html
+#          os_network:
+#            state: present
+#            name: "{{ outer_item.name }}"
+#            external: "{{ outer_item.external }}"
+#            region_name: "{{ region.name }}"
+#            availability_zone: "{{ region.az }}"
+
+#usage: openstack network create [-h] [-f {json,shell,table,value,yaml}]
+#                                [--share | --no-share] [--enable | --disable]
+#                                [--project <project>]
+#                                [--project-domain <project-domain>]
+#                                [--availability-zone-hint <availability-zone>]
+#                                [--enable-port-security | --disable-port-security]
+#                                [--external | --internal]
+#                                [--default | --no-default]
+#                                [--provider-network-type <provider-network-type>]
+#                                [--provider-physical-network <provider-physical-network>]
+#                                [--provider-segment <provider-segment>]
+#                                [--transparent-vlan | --no-transparent-vlan]
+#                                <name>
+        
+        - name: "Create Network via Openstack CLI"
+          command: openstack network create --availability-zone-hint "{{ region.az }}" --internal "{{ outer_item.name }}"
+          ignore_errors: true
 
         - name: "Create Subnet"
           # https://docs.ansible.com/ansible/os_subnet_module.html

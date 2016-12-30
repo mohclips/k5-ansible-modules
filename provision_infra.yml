@@ -19,8 +19,10 @@
     #
     # FLAGS:  flags to turn on/off features
     #
-    provision_network: true
-
+    provision_secgrp: false
+    provision_network: false
+    provision_router: true
+    provision_jumpsvr: false
 
   tasks:
     # we pull in our vars
@@ -59,6 +61,9 @@
            - "{{ security_groups }}"
            - rules
 
+      when: provision_secgrp == true
+
+    - block:
 
        # create Networks and Subnets
        # we use an include to loop over a number of tasks at once
@@ -68,29 +73,47 @@
          loop_control:
            loop_var: outer_item
 
+       - name: "Create Router on K5"
+         include: create-router-include.yml
+
+      when: provision_network == true
+
+    - block: 
+
+# works
+#       - name: "Router - connect to EXT_NET"
+#         # https://docs.ansible.com/ansible/os_router_module.html
+#         os_router:
+#           state: present
+#           name: "{{ router.name }}"
+##           availability_zone: "{{ region.az }}"
+#           network: "{{ router.ext_net }}"
+
+
        # link the Network and Subnets together on one Router
-       - name: "Create Router"
+       - name: "Add Network and Subnets to Router"
          # https://docs.ansible.com/ansible/os_router_module.html
          os_router:
            state: present
            name: "{{ router.name }}"
+#           availability_zone: "{{ region.az }}"
            interfaces:
              "{{ router.subnets }}"
 
-       - name: "Router - connect subnets"
-         # https://docs.ansible.com/ansible/os_router_module.html
-         os_router:
-           state: present
-           name: "{{ router.name }}"
-           network: "{{ router.ext_net }}"
+      when: provision_router == true 
 
-      when: provision_network == true 
 
-    # create a Jump sever
-    # this is done separately so that the jump server
-    #  can be re-created each night for security purposes
-    - name: "Create Jump box"
-      include: create-jumpserver-include.yml
+
+    - block:
+      # create a Jump sever
+      # this is done separately so that the jump server
+      #  can be re-created each night for security purposes
+      - name: "Create Jump box"
+        include: create-jumpserver-include.yml
+
+      when: provision_jumpsvr == true 
+
+
 
 
     #

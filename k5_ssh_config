@@ -1,0 +1,15 @@
+#
+# ssh config to allow pass thru from the jump server to the other lans
+#
+# .0/24 hardcoded - this should be done a different way ipaddr("host")?
+# 1.1.1.0/24 => 1.1.1.*
+Host  10.77.1.*  10.77.2.*  10.77.3.*  
+  ProxyCommand ssh -W %h:%p 62.60.42.219
+  IdentityFile ./NickCross1a.pem
+
+Host 62.60.42.219
+  User ubuntu
+  IdentityFile ./NickCross1a.pem
+  ControlMaster auto
+  ControlPath ~/.ssh/ansible-mux-%r@%h:%p
+  ControlPersist 5m

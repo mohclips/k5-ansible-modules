@@ -1,0 +1,19 @@
+#!/usr/bin/env ansible-playbook
+# vim: noai:ts=2:sw=2:et
+---
+
+- name: "Test Library"
+
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  # batch - run 10 tasks at a time when looped
+  serial: 10
+
+  tasks:
+
+    - k5_test: 
+      register: k5_out
+
+    - debug: var=k5_out
