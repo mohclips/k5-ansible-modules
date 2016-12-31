@@ -1,6 +1,9 @@
 #!/usr/bin/python
+
+
 import requests
 import os
+from ansible.module_utils.basic import *
 
 k5_auth_spec = dict(
     os_username=None, 
@@ -41,9 +44,25 @@ k5_endpoints = dict(
 
 )
 
+############## Common debug ###############
 k5_debug = False
 k5_debug_out = []
 
+def k5_debug_get():
+    """Return our debug list"""
+    return k5_debug_out
+
+def k5_debug_clear():
+    """Clear our debug list"""
+    k5_debug_out = []
+
+def k5_debug_add(s):
+    """Add string to debug list if env K5_DEBUG is defined"""
+    if k5_debug:
+        k5_debug_out.append(s)
+
+
+############## auth functions #############
 def k5_build_endpoints():
     """Update Endpoint dict with region"""
     for key, value in k5_endpoints.iteritems():
@@ -74,20 +93,7 @@ def k5_get_endpoints(e):
             k5_endpoints[ j['name'] ] = j['url']
 
 
-def k5_debug_get():
-    """Return our debug list"""
-    return k5_debug_out
-
-def k5_debug_clear():
-    """Clear our debug list"""
-    k5_debug_out = []
-
-def k5_debug_add(s):
-    """Add string to debug list if env K5_DEBUG is defined"""
-    if k5_debug:
-        k5_debug_out.append(s)
-
-def k5_get_auth_spec():
+def k5_get_auth_spec(module):
     """Get the K5 authentication details from the shell environment"""
 
     global k5_debug
@@ -102,38 +108,38 @@ def k5_get_auth_spec():
         k5_debug = True
 
     if OS_USERNAME is None:
-        return (False, 'OS_USERNAME environment variable is missing', '')
+        module.fail_json(msg='OS_USERNAME environment variable is missing', k5_auth_facts=k5_debug)
     else:
         k5_auth_spec['os_username'] = OS_USERNAME
 
     if OS_PASSWORD is None:
-        return (False, 'OS_PASSWORD environment variable is missing', '')
+        module.fail_json(msg='OS_PASSWORD environment variable is missing', k5_auth_facts=k5_debug)
     else:
         k5_auth_spec['os_password'] = OS_PASSWORD
 
     if OS_REGION_NAME is None:
-        return (False, 'OS_REGION_NAME environment variable is missing', '')
+        module.fail_json(msg='OS_REGION_NAME environment variable is missing', k5_auth_facts=k5_debug)
     else:
         k5_auth_spec['os_region_name'] = OS_REGION_NAME
 
     if OS_PROJECT_ID is None:
-        return (False, 'OS_PROJECT_ID environment variable is missing', '')
+        module.fail_json(msg= 'OS_PROJECT_ID environment variable is missing', k5_auth_facts=k5_debug)
     else:
         k5_auth_spec['os_project_id'] = OS_PROJECT_ID
 
     if OS_USER_DOMAIN_NAME is None:
-        return (False, 'OS_USER_DOMAIN_NAME environment variable is missing', '')
+        module.fail_json(msg= 'OS_USER_DOMAIN_NAME environment variable is missing', k5_auth_facts=k5_debug)
     else:
         k5_auth_spec['os_user_domain'] = OS_USER_DOMAIN_NAME
 
     k5_build_endpoints()
 
-def k5_get_auth_token():
+def k5_get_auth_token(module):
     """Request an authentication token from K5 - you are going to want to do this before calling any module"""
 
     k5_debug_clear()
 
-    k5_get_auth_spec()
+    k5_get_auth_spec(module)
 
     session = requests.Session()
     headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
@@ -154,15 +160,15 @@ def k5_get_auth_token():
     try:
         response = session.request('POST', url, headers=headers, json=json)
     except requests.exceptions.RequestException as e:
-        return (False, e, k5_debug_get())
+        module.fail_json(msg=e)
 
     if response.status_code not in (201,):
-        return (False, "RESP: " + response.status_code + " " + response.content, k5_debug_get())
+        module.fail_json(msg="RESP: " + response.status_code + " " + response.content, k5_auth_facts=k5_debug)
 
     if 'X-Subject-Token' in response.headers.keys():
         auth_token = response.headers['X-Subject-Token']
     else:
-        return (False, "Token not found!", k5_debug_get())
+        module.fail_json(msg="Token not found", k5_auth_facts=k5_debug)
 
     #
     # If we get here we the server responded with our token
@@ -181,7 +187,20 @@ def k5_get_auth_token():
     if k5_debug:
         k5_auth['server_response']=response.json()
 
+    module.exit_json(changed=True, msg="Authentication Successful", k5_auth_facts=k5_auth)
 
-    return (True, k5_auth, k5_debug_get())
+######################################################################################
+
+def main():
+
+    module = AnsibleModule( argument_spec=dict() )
+
+    k5_get_auth_token(module)
+
+######################################################################################
+
+if __name__ == '__main__':  
+    main()
+
 
 

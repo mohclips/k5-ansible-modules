@@ -13,7 +13,7 @@
 
   tasks:
 
-    - k5_test: 
-      register: k5_out
+    - k5_auth: 
+      register: k5_auth_reg
 
-    - debug: var=k5_out
+    - debug: var=k5_auth_reg.k5_auth_facts.auth_token

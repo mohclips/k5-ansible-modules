@@ -7,7 +7,7 @@ uploaded for safekeeping - none of this works fully as yet
 # Usage
 
 ## openrc
-
+```bash
  export OS_USERNAME=obvs
  export OS_PASSWORD=obvs
  export OS_PROJECT_NAME=project not the contract
@@ -18,6 +18,7 @@ uploaded for safekeeping - none of this works fully as yet
  export OS_IDENTITY_API_VERSION=3
  export OS_USER_DOMAIN_NAME=contract id
  export OS_DEFAULT_DOMAIN=contract id
+```
 
 ## Execution
 

@@ -4,3 +4,4 @@ openrc
 .gitignore
 *.pyc
 *.retry
+git-usage
