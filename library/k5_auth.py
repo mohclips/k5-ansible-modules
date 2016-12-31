@@ -1,5 +1,90 @@
 #!/usr/bin/python
 
+ANSIBLE_METADATA = {'status': ['preview'],
+                    'supported_by': 'community',
+                    'version': '1.0'}
+
+DOCUMENTATION = '''
+---
+module: k5_auth
+short_description: Retrieve an authentication token from K5
+version_added: "1.0"
+description:
+    - Login and Retrieve an authentication token from K5, plus the endpoints
+options:
+   username:
+     description:
+        - Login username.
+     required: false
+     default: None
+   password:
+     description:
+        - Password of user.
+     required: false
+     default: None
+   user_domain:
+     description:
+        - Domain the user belongs to.
+     required: false
+     default: None
+   project_id:
+     description:
+       - Project id.
+     required: false
+     default: None
+   region_name:
+     description:
+       - Region the user belongs to.
+     required: false
+     default: None     
+requirements:
+    - "python >= 2.6"
+'''
+
+EXAMPLES = '''
+# Get auth token using module paramters
+- k5_auth:
+     username: admin
+     password: secret
+     user_domain: demo
+     project_id: 9500d1d6b17936ea97745d5de30cc112
+     region_name: uk-1
+# Get auth token using Openstack OS_* environment variables
+- k5_auth:
+'''
+
+RETURN = '''
+k5_auth_facts:
+    description: Dictionary describing the authentication details.
+    returned: On success when token is returned
+    type: dictionary
+    contains:
+        K5-DEBUG:
+            description: Is K5_DEBUG environment variable set.
+            type: boolean
+            sample: True
+        auth_token:
+            description: The K5 authentication token.
+            type: string
+            sample: "010101928282726528495fe"
+        endpoints:
+            description: The endpoints applicable to this authentication token.
+            type: dictionary
+            contains:
+                endpoint-name:
+                    description: The url to the endpoint
+                    type: string
+                    sample: "https://compute.uk-1.cloud.global.fujitsu.com/v2/9500d1d6b17936ea97745d5de30cc112"
+        expiry:
+            description: Expiry date of the token.
+            type: string
+            sample: "2017-01-01T01:44:28.081619Z"
+        issed:
+            description: Issue date of the token.
+            type: string
+            sample: "2016-12-31T22:44:28.081655Z"
+'''
+
 
 import requests
 import os
