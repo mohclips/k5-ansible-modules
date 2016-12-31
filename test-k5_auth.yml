@@ -13,7 +13,9 @@
 
   tasks:
 
-    - k5_auth: 
+    - k5_auth:
+        username: "crossn"
+        region_name: "uk-1"
       register: k5_auth_reg
 
     - debug: var=k5_auth_reg.k5_auth_facts.auth_token

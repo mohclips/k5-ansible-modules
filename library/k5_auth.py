@@ -3,6 +3,7 @@
 
 import requests
 import os
+import json
 from ansible.module_utils.basic import *
 
 k5_auth_spec = dict(
@@ -94,9 +95,12 @@ def k5_get_endpoints(e):
 
 
 def k5_get_auth_spec(module):
-    """Get the K5 authentication details from the shell environment"""
+    """Get the K5 authentication details from the shell environment or module params"""
 
     global k5_debug
+
+    if 'K5_DEBUG' in os.environ:
+        k5_debug = True
 
     OS_USERNAME = os.environ.get('OS_USERNAME', None)
     OS_PASSWORD = os.environ.get('OS_PASSWORD', None)
@@ -104,33 +108,50 @@ def k5_get_auth_spec(module):
     OS_PROJECT_ID = os.environ.get('OS_PROJECT_ID', None)
     OS_USER_DOMAIN_NAME = os.environ.get('OS_USER_DOMAIN_NAME', None)
 
-    if 'K5_DEBUG' in os.environ:
-        k5_debug = True
+    # now overwrite the vars if provided within the playbook module
 
-    if OS_USERNAME is None:
-        module.fail_json(msg='OS_USERNAME environment variable is missing', k5_auth_facts=k5_debug)
+    mp = module.params
+
+    if 'username' in mp and mp['username']:
+        k5_auth_spec['os_username'] = mp['username']
+    elif OS_USERNAME is None:
+        module.fail_json(msg='param username or OS_USERNAME environment variable is missing', k5_auth_facts=k5_debug)
     else:
         k5_auth_spec['os_username'] = OS_USERNAME
 
-    if OS_PASSWORD is None:
-        module.fail_json(msg='OS_PASSWORD environment variable is missing', k5_auth_facts=k5_debug)
+    if 'password' in mp and mp['password']:
+        k5_auth_spec['os_password'] = mp['password']
+    elif OS_PASSWORD is None:
+        module.fail_json(msg='param password or OS_PASSWORD environment variable is missing', k5_auth_facts=k5_debug)
     else:
         k5_auth_spec['os_password'] = OS_PASSWORD
 
-    if OS_REGION_NAME is None:
-        module.fail_json(msg='OS_REGION_NAME environment variable is missing', k5_auth_facts=k5_debug)
+    if 'region_name' in mp and mp['region_name']:
+        k5_auth_spec['os_region_name'] = mp['region_name']
+    elif OS_REGION_NAME is None:
+        module.fail_json(msg='param region_name or OS_REGION_NAME environment variable is missing', k5_auth_facts=k5_debug)
     else:
         k5_auth_spec['os_region_name'] = OS_REGION_NAME
 
-    if OS_PROJECT_ID is None:
-        module.fail_json(msg= 'OS_PROJECT_ID environment variable is missing', k5_auth_facts=k5_debug)
+    if 'project_id' in mp and mp['project_id']:
+        k5_auth_spec['os_project_id'] = mp['project_id']
+    elif OS_PROJECT_ID is None:
+        module.fail_json(msg= 'param project_id or OS_PROJECT_ID environment variable is missing', k5_auth_facts=k5_debug)
     else:
         k5_auth_spec['os_project_id'] = OS_PROJECT_ID
 
-    if OS_USER_DOMAIN_NAME is None:
-        module.fail_json(msg= 'OS_USER_DOMAIN_NAME environment variable is missing', k5_auth_facts=k5_debug)
+    if 'user_domain' in mp and mp['user_domain']:
+        k5_auth_spec['os_user_domain'] = mp['user_domain']
+    elif OS_USER_DOMAIN_NAME is None:
+        module.fail_json(msg= 'param user_domain or OS_USER_DOMAIN_NAME environment variable is missing', k5_auth_facts=k5_debug)
     else:
         k5_auth_spec['os_user_domain'] = OS_USER_DOMAIN_NAME
+    
+    k5_debug_add('os_username: {0}'.format(k5_auth_spec['os_username']))
+#    k5_debug_add('os_password: {0}'.format(k5_auth_spec['os_password']))
+    k5_debug_add('os_region_name: {0}'.format(k5_auth_spec['os_region_name']))
+    k5_debug_add('os_project_id: {0}'.format(k5_auth_spec['os_project_id']))
+    k5_debug_add('os_user_domain: {0}'.format(k5_auth_spec['os_user_domain']))
 
     k5_build_endpoints()
 
@@ -147,24 +168,26 @@ def k5_get_auth_token(module):
     url = k5_endpoints['identity'] + '/v3/auth/tokens'
     k5_debug_add('endpoint: {0}'.format(url))
 
-    json = {'auth': {'identity': {'methods': ['password'],
+    query_json = {'auth': {'identity': {'methods': ['password'],
                            'password': {'user': {'domain': {'name': k5_auth_spec['os_user_domain']},
                                                  'name': k5_auth_spec['os_username'],
                                                  'password': k5_auth_spec['os_password']}}},
               'scope': {'project': {'id': k5_auth_spec['os_project_id']}}}}
 
 
-    #k5_debug_add('json: {0}'.format(json))
+    #k5_debug_add('json: {0}'.format(query_json))
     k5_debug_add('REQ: {0}'.format(url))
 
     try:
-        response = session.request('POST', url, headers=headers, json=json)
+        response = session.request('POST', url, headers=headers, json=query_json)
     except requests.exceptions.RequestException as e:
         module.fail_json(msg=e)
 
+    # we failed to authenticate
     if response.status_code not in (201,):
-        module.fail_json(msg="RESP: " + response.status_code + " " + response.content, k5_auth_facts=k5_debug)
+        module.fail_json(msg="RESP: HTTP Code:" + str(response.status_code) + " " + str(response.content), debug=k5_debug_out)
 
+    # we authenticated, now check the token is present
     if 'X-Subject-Token' in response.headers.keys():
         auth_token = response.headers['X-Subject-Token']
     else:
@@ -193,7 +216,13 @@ def k5_get_auth_token(module):
 
 def main():
 
-    module = AnsibleModule( argument_spec=dict() )
+    module = AnsibleModule( argument_spec=dict(
+        username = dict(required=False, default=None, type='str'),
+        password = dict(required=False, default=None, type='str'),
+        user_domain = dict(required=False, default=None, type='str'), 
+        project_id = dict(required=False, default=None, type='str'),
+        region_name = dict(required=False, default=None, type='str') 
+    ) )
 
     k5_get_auth_token(module)
 
