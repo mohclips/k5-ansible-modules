@@ -75,6 +75,26 @@ k5_auth_facts:
                     description: The url to the endpoint
                     type: string
                     sample: "https://compute.uk-1.cloud.global.fujitsu.com/v2/9500d1d6b17936ea97745d5de30cc112"
+        k5_auth_spec:
+            description: Authentication details used
+            type: dictionary
+            contains:
+                os_username:
+                    description: Username.
+                    type: string
+                    sample: "crossnicholas"
+                os_region_name: 
+                    description: Region name.
+                    type: string
+                    sample: "uk-1"
+                os_project_id: 
+                    description: project id, sometimes called tenant id.
+                    type: string
+                    sample: "9500d1d6b17936ea97745d5de30cc112"
+                os_user_domain: 
+                    description: user domain, actually the contract id on K5
+                    type: string
+                    sample: "Ylahen"
         expiry:
             description: Expiry date of the token.
             type: string
@@ -91,14 +111,13 @@ import os
 import json
 from ansible.module_utils.basic import *
 
+#useful items to use later in other modules
 k5_auth_spec = dict(
     os_username=None, 
     os_password=None, 
     os_region_name=None, 
-    os_project_name=None, 
     os_project_id=None, 
-    os_user_domain=None, 
-    k5_token=None
+    os_user_domain=None 
 )
 
 k5_endpoints = dict(
@@ -283,17 +302,21 @@ def k5_get_auth_token(module):
     #
     k5_get_endpoints(response.json())
 
+    # clear os_password from spec before we send it back to the user
+    del k5_auth_spec['os_password']
+
     # our json to return as succesful
     k5_auth = {
         "auth_token": auth_token,
+        "auth_spec": k5_auth_spec,
         "endpoints": k5_endpoints,
         "issued": response.json()['token']['issued_at'], 
         "expiry": response.json()['token']['expires_at'],
         "K5_DEBUG": k5_debug
     }
 
-    if k5_debug:
-        k5_auth['server_response']=response.json()
+#    if k5_debug:
+#        k5_auth['server_response']=response.json()
 
     module.exit_json(changed=True, msg="Authentication Successful", k5_auth_facts=k5_auth)
 

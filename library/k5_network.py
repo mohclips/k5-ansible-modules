@@ -6,25 +6,25 @@ ANSIBLE_METADATA = {'status': ['preview'],
 
 DOCUMENTATION = '''
 ---
-module: k5_router
-short_description: Create router on K5 in particular AZ
+module: k5_network
+short_description: Create network on K5 in particular AZ
 version_added: "1.0"
 description:
-    - Explicit K5 call to create a router in an AZ - replaces os_router from Openstack module, but is more limited. Use os_router to update the router. 
+    - Explicit K5 call to create a network in an AZ - replaces os_network from Openstack module, but is more limited. Use os_network to update the network. 
 options:
    name:
      description:
-        - Name of the router.
+        - Name of the network.
      required: true
      default: None
    state:
      description:
-        - State of the router. Can only be 'present'.
+        - State of the network. Can only be 'present'.
      required: true
      default: None
    availability_zone:
      description:
-        - AZ to create the router in.
+        - AZ to create the network in.
      required: true
      default: None
    k5_auth:
@@ -37,9 +37,9 @@ requirements:
 '''
 
 EXAMPLES = '''
-# Create a k5 router
-- k5_router:
-     name: admin
+# Create a network in an AZ
+- k5_network:
+     name: network-01
      state: present
      availability_zone: uk-1a
      k5_auth: "{{ k5_auth_facts }}"
@@ -114,8 +114,8 @@ def k5_get_endpoint(e,name):
     return e['endpoints'][name]
 
 
-def k5_create_router(module):
-    """Create a router in an AZ on K5"""
+def k5_create_network(module):
+    """Create a network in an AZ on K5"""
     
     global k5_debug
 
@@ -132,14 +132,14 @@ def k5_create_router(module):
     endpoint = k5_facts['endpoints']['networking']
     auth_token = k5_facts['auth_token']
 
-    router_name = module.params['name']
+    network_name = module.params['name']
     az = module.params['availability_zone']
     
     # actually the project_id, but stated as tenant_id in the API
     tenant_id = k5_facts['auth_spec']['os_project_id']
     
     k5_debug_add('auth_token: {0}'.format(auth_token))
-    k5_debug_add('router_name: {0}'.format(router_name))
+    k5_debug_add('network_name: {0}'.format(network_name))
     k5_debug_add('tenant_id: {0}'.format(tenant_id))
     k5_debug_add('az: {0}'.format(az))
 
@@ -147,9 +147,9 @@ def k5_create_router(module):
 
     headers = {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Auth-Token': auth_token }
 
-    url = endpoint + '/v2.0/routers'
+    url = endpoint + '/v2.0/networks'
 
-    query_json = {"router": {"name": router_name,"tenant_id": tenant_id, "availability_zone": az}}
+    query_json = {"network": {"name": network_name, "availability_zone": az}}
 
     k5_debug_add('endpoint: {0}'.format(endpoint))
     k5_debug_add('REQ: {0}'.format(url))
@@ -166,9 +166,9 @@ def k5_create_router(module):
         module.fail_json(msg="RESP: HTTP Code:" + str(response.status_code) + " " + str(response.content), debug=k5_debug_out)
 
     if k5_debug:
-        module.exit_json(changed=True, msg="Router Creation Successful", k5_router_facts=response.json()['router'], debug=k5_debug_out )
+        module.exit_json(changed=True, msg="Network Creation Successful", k5_network_facts=response.json()['network'], debug=k5_debug_out )
 
-    module.exit_json(changed=True, msg="Router Creation Successful", k5_router_facts=response.json()['router'] )
+    module.exit_json(changed=True, msg="Network Creation Successful", k5_network_facts=response.json()['network'] )
 
 
 ######################################################################################
@@ -183,9 +183,9 @@ def main():
     ) )
 
     if module.params['state'] == 'present':
-        k5_create_router(module)
+        k5_create_network(module)
     else:
-       module.fail_json(msg="No 'absent' function in this module, use os_router module instead") 
+       module.fail_json(msg="No 'absent' function in this module, use os_network module instead") 
 
 
 ######################################################################################
