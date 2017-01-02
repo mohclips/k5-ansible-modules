@@ -154,7 +154,7 @@ def k5_get_port_facts(module, k5_facts, server_id):
 
     headers = {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Auth-Token': auth_token }
 
-    url = endpoint + '/servers/' + server_id + '/os_interface'
+    url = endpoint + '/servers/' + server_id + '/os-interface'
 
     k5_debug_add('endpoint: {0}'.format(endpoint))
     k5_debug_add('REQ: {0}'.format(url))
@@ -220,9 +220,13 @@ def k5_create_floating_ip(module):
 
     port_facts = k5_get_port_facts(module, k5_facts, server_id)
 
+    k5_debug_add(port_facts)
+
     try:
-      port_id = port_facts['interfaceAttachments']['port_id']
-      network_id = port_facts['interfaceAttachments']['network_id']
+      # attach to first port
+      port = port_facts['interfaceAttachments'][0]
+      port_id = port['port_id']
+      network_id = port['net_id']
     except:
       # is there any need for this?  surely a port always exists?    
       if k5_debug:
@@ -230,12 +234,12 @@ def k5_create_floating_ip(module):
       else:
           module.exit_json(changed=False, msg="Port on " + server_name + " not found")
 
-    k5_debug_add('auth_token: {0}'.format(auth_token))
-    k5_debug_add('server_name: {0}'.format(server_name))
-    k5_debug_add('fixed_ip: {0}'.format(fixed_ip))
-    k5_debug_add('network_id: {0}'.format(network_id))
-    k5_debug_add('port_id: {0}'.format(port_id))
-    k5_debug_add('az: {0}'.format(az))
+    k5_debug_add('port_id: '+str(port_id))
+    k5_debug_add('net_id: '+str(network_id))
+    k5_debug_add('auth_token: ' + str(auth_token))
+    k5_debug_add('server_name: '+ str(server_name))
+    k5_debug_add('fixed_ip: '+str(fixed_ip))
+    k5_debug_add('az: '+str(az))
 
     session = requests.Session()
 
