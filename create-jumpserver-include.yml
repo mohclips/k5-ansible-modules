@@ -7,14 +7,18 @@
 #  service
 #
 
-            - name: "Create port / fixed IP for jump server"
-              os_port:
+
+            - name: "Create port / fixed IP for jump server useing K5"
+              k5_port:
                 state: present
                 name: "jumpserver_port"
-                network: "{{ networks.0.name }}"
-                fixed_ips:
-                  - ip_address: "{{ jumpserver.fixed_ip }}"
-                security_groups: [ "{{ jumpserver.security_group }}" ]
+                network_name: "{{ networks.0.name }}"
+                subnet_name: "{{ networks.0.subnet }}"
+                availability_zone: "{{ region.az }}"
+                fixed_ip: "{{ jumpserver.fixed_ip }}"
+                security_groups: 
+                  - "{{ jumpserver.security_group }}" 
+                k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
 
             - name: "Create the jump server"
             # autoip must be no - k5 doesnt allow it at build time

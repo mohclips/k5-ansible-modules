@@ -120,7 +120,7 @@ servers:
     image: "CentOS 7.2 64bit (English) 01"
     flavor: "S-1"
     volume_size: 30
-    subnet: "nx-1a-appslan"
+    subnet: "nx-1a-dblan"
     ansible_user: "ubuntu"
     ansible_connection: "ssh"
 

@@ -27,7 +27,7 @@
     provision_secgrp: false
     provision_network: true
     provision_router: true
-    provision_jumpsvr: false
+    provision_jumpsvr: true
     K5_DEBUG: "{{ lookup('env','K5_DEBUG')|default(False) }}"
 
   tasks:
@@ -77,9 +77,6 @@
         k5_auth:
         register: k5_auth_reg
 
-#      - debug: var=k5_auth_reg
-#        when: K5_DEBUG
-
       - debug: var=k5_auth_reg.k5_auth_facts.auth_token
  
       # create Networks and Subnets
@@ -89,9 +86,6 @@
         with_items: "{{ networks }}"
         loop_control:
           loop_var: outer_item
-
-#      - name: "Create Router on K5"
-#        include: create-router-include.yml
 
       when: provision_network == true
 
