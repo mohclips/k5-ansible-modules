@@ -107,15 +107,16 @@
       loop_control:
         loop_var: outer_item
       # TODO report no_log not working in this loop
-      no_log: True
+      #no_log: True
 
-    - name: "Delete security groups"
-      os_security_group:
-      # https://docs.ansible.com/ansible/os_security_group_module.html
-        state: absent
-        name: "{{ item.0.name }}"
-      with_subelements: 
-        - "{{ security_groups }}"
-        - rules
-      no_log: True
+# TODO: delete all port on all subnets
+#    - name: "Delete security groups"
+#      os_security_group:
+#      # https://docs.ansible.com/ansible/os_security_group_module.html
+#        state: absent
+#        name: "{{ item.0.name }}"
+#      with_subelements: 
+#        - "{{ security_groups }}"
+#        - rules
+#      no_log: True
 

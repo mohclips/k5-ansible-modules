@@ -26,3 +26,13 @@
       register: k5_router_reg
 
     - debug: var=k5_router_reg
+
+    # test if we can create another with the same name - should not be able to
+    - k5_router:
+        name: "nx-test-1a"
+        state: present
+        availability_zone: "uk-1a"
+        k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
+      register: k5_router_reg
+
+    - debug: var=k5_router_reg

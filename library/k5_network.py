@@ -114,6 +114,42 @@ def k5_get_endpoint(e,name):
     return e['endpoints'][name]
 
 
+def k5_check_network_exists(module, k5_facts):
+    """Chekc if a network_name already exists"""
+   
+    endpoint = k5_facts['endpoints']['networking']
+    auth_token = k5_facts['auth_token']
+    network_name = module.params['name']
+ 
+    session = requests.Session()
+
+    headers = {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Auth-Token': auth_token }
+
+    url = endpoint + '/v2.0/networks'
+
+    k5_debug_add('endpoint: {0}'.format(endpoint))
+    k5_debug_add('REQ: {0}'.format(url))
+    k5_debug_add('headers: {0}'.format(headers))
+
+    try:
+        response = session.request('GET', url, headers=headers)
+    except requests.exceptions.RequestException as e:
+        module.fail_json(msg=e)
+
+    # we failed to get data 
+    if response.status_code not in (200,):
+        module.fail_json(msg="RESP: HTTP Code:" + str(response.status_code) + " " + str(response.content), debug=k5_debug_out)
+
+    #k5_debug_add("RESP: " + str(response.json()))
+
+    for n in response.json()['networks']:
+        #k5_debug_add("Found network name: " + str(n['name']))
+        if str(n['name']) == network_name:
+            #k5_debug_add("Found it!")
+            return True
+
+    return False
+
 def k5_create_network(module):
     """Create a network in an AZ on K5"""
     
@@ -133,6 +169,14 @@ def k5_create_network(module):
     auth_token = k5_facts['auth_token']
 
     network_name = module.params['name']
+
+    if k5_check_network_exists(module, k5_facts):
+        if k5_debug:
+            module.exit_json(changed=False, msg="Network " + network_name + " already exists", debug=k5_debug_out)
+        else:
+            module.exit_json(changed=False, msg="Network " + network_name + " already exists")
+
+
     az = module.params['availability_zone']
     
     # actually the project_id, but stated as tenant_id in the API
@@ -161,12 +205,14 @@ def k5_create_network(module):
     except requests.exceptions.RequestException as e:
         module.fail_json(msg=e)
 
-    # we failed to authenticate
+    # we failed to make a change
     if response.status_code not in (201,):
         module.fail_json(msg="RESP: HTTP Code:" + str(response.status_code) + " " + str(response.content), debug=k5_debug_out)
+    
+    k5_debug_add('response json: {0}'.format(response.json()))
 
     if k5_debug:
-        module.exit_json(changed=True, msg="Network Creation Successful", k5_network_facts=response.json()['network'], debug=k5_debug_out )
+      module.exit_json(changed=True, msg="Network Creation Successful", k5_network_facts=response.json()['network'], debug=k5_debug_out )
 
     module.exit_json(changed=True, msg="Network Creation Successful", k5_network_facts=response.json()['network'] )
 

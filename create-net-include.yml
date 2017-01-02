@@ -30,16 +30,25 @@
 #                                [--transparent-vlan | --no-transparent-vlan]
 #                                <name>
         
-        - name: "Create Network via Openstack CLI"
-          command: openstack network create --availability-zone-hint "{{ region.az }}" --internal "{{ outer_item.name }}"
-          ignore_errors: true
+#        - name: "Create Network via Openstack CLI"
+#          command: openstack network create --availability-zone-hint "{{ region.az }}" --internal "{{ outer_item.name }}"
+#          ignore_errors: true
 
-        - name: "Create Subnet"
-          # https://docs.ansible.com/ansible/os_subnet_module.html
-          os_subnet:
-            state: present
-            network_name: "{{ outer_item.name }}"
-            name: "{{ outer_item.subnet }}"
-            cidr: "{{ outer_item.cidr }}"
+  # we use the K5 API here to allocate a network within a particular AZ, os_network module does not honour this option
+  # once you have created the Network with k5_network, you can modify it with os_network, if you wish.
+  - name: "Create Network on K5"
+    k5_network:
+      name:  "{{ outer_item.name }}"
+      state: present
+      availability_zone: "{{ region.az }}"
+      k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
+
+  - name: "Create Subnet"
+    # https://docs.ansible.com/ansible/os_subnet_module.html
+    os_subnet:
+      state: present
+      network_name: "{{ outer_item.name }}"
+      name: "{{ outer_item.subnet }}"
+      cidr: "{{ outer_item.cidr }}"
 
 
