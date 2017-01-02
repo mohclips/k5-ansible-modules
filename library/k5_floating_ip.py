@@ -174,6 +174,43 @@ def k5_get_port_facts(module, k5_facts, server_id):
     else:
       module.fail_json(msg="Missing interfaceAttachments in response to server port request")
 
+def k5_get_network_id_from_name(module, k5_facts):
+    """Get an id from a network_name"""
+
+    endpoint = k5_facts['endpoints']['networking']
+    auth_token = k5_facts['auth_token']
+    network_name = module.params['ext_network']
+
+    session = requests.Session()
+
+    headers = {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Auth-Token': auth_token }
+
+    url = endpoint + '/v2.0/networks'
+
+    k5_debug_add('endpoint: {0}'.format(endpoint))
+    k5_debug_add('REQ: {0}'.format(url))
+    k5_debug_add('headers: {0}'.format(headers))
+
+    try:
+        response = session.request('GET', url, headers=headers)
+    except requests.exceptions.RequestException as e:
+        module.fail_json(msg=e)
+
+    # we failed to get data
+    if response.status_code not in (200,):
+        module.fail_json(msg="RESP: HTTP Code:" + str(response.status_code) + " " + str(response.content), debug=k5_debug_out)
+
+    #k5_debug_add("RESP: " + str(response.json()))
+
+    for n in response.json()['networks']:
+        #k5_debug_add("Found network name: " + str(n['name']))
+        if str(n['name']) == network_name:
+            #k5_debug_add("Found it!")
+            return n['id']
+
+    return ''
+
+
 def k5_create_floating_ip(module):
     """Attach a floating IP to a server on K5"""
     
@@ -194,6 +231,7 @@ def k5_create_floating_ip(module):
 
     server_name = module.params['server']
     fixed_ip = module.params['fixed_ip']
+    ext_net = module.params['ext_network']
 
     # we need the server_id not server_name, so grab it
     server_facts = k5_get_server_facts(module, k5_facts)
@@ -218,6 +256,20 @@ def k5_create_floating_ip(module):
       else:
           module.exit_json(changed=False, msg="Server " + server_name + " not found")
 
+    #
+    # get ext_net id
+    #
+    network_id = k5_get_network_id_from_name(module, k5_facts) 
+    if network_id == '':
+      if k5_debug:
+          module.exit_json(changed=False, msg="Network " + network_name + " not found", debug=k5_debug_out)
+      else:
+          module.exit_json(changed=False, msg="Network " + network_name + " not found")
+
+
+    #
+    # get port facts
+    #
     port_facts = k5_get_port_facts(module, k5_facts, server_id)
 
     k5_debug_add(port_facts)
@@ -226,7 +278,7 @@ def k5_create_floating_ip(module):
       # attach to first port
       port = port_facts['interfaceAttachments'][0]
       port_id = port['port_id']
-      network_id = port['net_id']
+      #network_id = port['net_id'] # wrong net id, needs to be external
     except:
       # is there any need for this?  surely a port always exists?    
       if k5_debug:
@@ -283,6 +335,7 @@ def main():
     module = AnsibleModule( argument_spec=dict(
         server = dict(required=True, default=None, type='str'),
         fixed_ip = dict(required=True, default=None, type='str'),
+        ext_network = dict(required=True, default=None, type='str'),
         k5_auth = dict(required=True, default=None, type='dict')
     ) )
 

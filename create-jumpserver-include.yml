@@ -7,95 +7,94 @@
 #  service
 #
 
+  - name: "Create port / fixed IP for jump server useing K5"
+    k5_port:
+      state: present
+      name: "jumpserver_port"
+      network_name: "{{ networks.0.name }}"
+      subnet_name: "{{ networks.0.subnet }}"
+      availability_zone: "{{ region.az }}"
+      fixed_ip: "{{ jumpserver.fixed_ip }}"
+      security_groups: 
+        - "{{ jumpserver.security_group }}" 
+      k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
 
-            - name: "Create port / fixed IP for jump server useing K5"
-              k5_port:
-                state: present
-                name: "jumpserver_port"
-                network_name: "{{ networks.0.name }}"
-                subnet_name: "{{ networks.0.subnet }}"
-                availability_zone: "{{ region.az }}"
-                fixed_ip: "{{ jumpserver.fixed_ip }}"
-                security_groups: 
-                  - "{{ jumpserver.security_group }}" 
-                k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
+  - name: "Create the jump server"
+  # autoip must be no - k5 doesnt allow it at build time
+    os_server:
+      name: "{{ jumpserver.name }}"
+      state: present
+      region_name: "{{ region.name }}"
+      availability_zone: "{{ region.az }}"
+      image: "{{ jumpserver.image }}"
+      flavor: "{{ jumpserver.flavor }}"
+      key_name: "{{ region.ssh_keypair }}"
+      #network: "{{ networks.0.name }}"  # not needed if we supply nics (ie. pre created ports)
+      nics:
+        - "port-name=jumpserver_port"
+      #security_groups: [ "nx-az1b-jumpbox" ] # not needed if we supply nics (ie. pre created ports)
+      volume_size: "{{ jumpserver.volume_size }}"
+      boot_from_volume: yes
+      terminate_volume: yes
+      auto_ip: no
+      meta:
+        group: "JumpServers"
+        key_name: "{{ region.ssh_keypair }}" 
 
-            - name: "Create the jump server"
-            # autoip must be no - k5 doesnt allow it at build time
-              os_server:
-                name: "{{ jumpserver.name }}"
-                state: present
-                region_name: "{{ region.name }}"
-                availability_zone: "{{ region.az }}"
-                image: "{{ jumpserver.image }}"
-                flavor: "{{ jumpserver.flavor }}"
-                key_name: "{{ region.ssh_keypair }}"
-                #network: "{{ networks.0.name }}"  # not needed if we supply nics (ie. pre created ports)
-                nics:
-                  - "port-name=jumpserver_port"
-                #security_groups: [ "nx-az1b-jumpbox" ] # not needed if we supply nics (ie. pre created ports)
-                volume_size: "{{ jumpserver.volume_size }}"
-                boot_from_volume: yes
-                terminate_volume: yes
-                auto_ip: no
-                meta:
-                  group: "JumpServers"
-                  key_name: "{{ region.ssh_keypair }}" 
+  # but k5 does actually allow assignment of a floating (public) afterward initial creation
+  # this is by design on k5, that it needs to be a 2-part process
+  # TODO: find doc link to this 'feature'
+  - name: "Assign a floating IP"
+    k5_floating_ip:
+      # https://docs.ansible.com/ansible/os_floating_ip_module.html
+      # bug: https://github.com/ansible/ansible/issues/19620
+      server: "{{ jumpserver.name }}"
+      fixed_ip: "{{ jumpserver.fixed_ip }}" # local address to NAT to
+      ext_network: "{{ router.ext_net }}"
+      k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
+    register: floating_ip_reg
 
-            # but k5 does actually allow assignment of a floating (public) afterward initial creation
-            # this is by design on k5, that it needs to be a 2-part process
-            # TODO: find doc link to this 'feature'
-            - name: "Assign a floating IP"
-              os_floating_ip:
-                # https://docs.ansible.com/ansible/os_floating_ip_module.html
-                # bug: https://github.com/ansible/ansible/issues/19620
-                server: "{{ jumpserver.name }}"
-                fixed_address: "{{ jumpserver.fixed_ip }}" # local address to NAT to
-                wait: true
-                timeout: 180
-              register: os_floating_ip
+  # our external internet IP
+  - debug: var=floating_ip_reg
 
-            # our external internet IP
-            - debug: var=os_floating_ip.floating_ip.floating_ip_address
+  #
+  # now we have a running server, save the details to a local inventory for later use
+  #
+  - block:
+    # set a fact to use the external IP in the template later on
+    - set_fact: 
+        jumpserver_floatingip: "{{ floating_ip_reg.k5_floatingip_facts.floating_ip_address }}"
 
-            #
-            # now we have a running server, save the details to a local inventory for later use
-            #
-            - block:
-              # set a fact to use the external IP in the template later on
-              - set_fact: 
-                  jumpserver_floatingip: "{{ os_floating_ip.floating_ip.floating_ip_address }}"
+    - name: "add to the running inventory the instance created above"
+      add_host: 
+        hostname: "{{ jumpserver.name }}"
+        groupname: "jumpservers"
 
-              - name: "add to the running inventory the instance created above"
-                add_host: 
-                  hostname: "{{ jumpserver.name }}"
-                  groupname: "jumpservers"
-
-              - name: "Add the newly created instance to the local host group (located inside the directory)"
-                local_action: lineinfile 
-                  dest="./inventory/jumpservers" 
-                  regexp="{{ jumpserver.name }}"
-                  insertafter="[jumpservers]" 
-                  line="{{ jumpserver.name }} ansible_host={{ jumpserver_floatingip }} ansible_user={{ jumpserver.ansible_user }} ansible_connection={{ jumpserver.ansible_connection }}"
+    - name: "Add the newly created instance to the local host group (located inside the directory)"
+      local_action: lineinfile 
+        dest="./inventory/jumpservers" 
+        regexp="{{ jumpserver.name }}"
+        insertafter="[jumpservers]" 
+        line="{{ jumpserver.name }} ansible_host={{ jumpserver_floatingip }} ansible_user={{ jumpserver.ansible_user }} ansible_connection={{ jumpserver.ansible_connection }}"
 
 
-              - name: "Wait for instance to listen on port 22"
-                wait_for:
-                  state: started
-                  host: "{{ jumpserver_floatingip }}"
-                  port: 22
-                  delay: 10
-                  search_regex: "OpenSSH"
+    - name: "Wait for instance to listen on port 22"
+      wait_for:
+        state: started
+        host: "{{ jumpserver_floatingip }}"
+        port: 22
+        delay: 10
+        search_regex: "OpenSSH"
 
-              - name: "Create/update local ssh_config for jumpserver pass thru"
-                template:
-                  src: ./templates/k5_ssh_config.j2
-                  dest: ./k5_ssh_config
-                delegate_to: localhost    # not needed, but to make this obvious
+    - name: "Create/update local ssh_config for jumpserver pass thru"
+      template:
+        src: ./templates/k5_ssh_config.j2
+        dest: ./k5_ssh_config
+      delegate_to: localhost    # not needed, but to make this obvious
 
-              - debug: msg="**** jump server is LIVE and ready to use @ {{ jumpserver_floatingip }} ****"
+    - debug: msg="**** jump server is LIVE and ready to use @ {{ jumpserver_floatingip }} ****"
 
-              when: os_floating_ip.floating_ip.floating_ip_address is defined
+    when: os_floating_ip_reg.k5_floating_ip_facts.floating_ip_address is defined
 
 
 

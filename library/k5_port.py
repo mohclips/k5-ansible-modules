@@ -155,6 +155,8 @@ def k5_get_security_group_ids_from_names(module, k5_facts):
         else:
             module.fail_json(msg="Security Group " + sg +  " not found")
 
+    k5_debug_add(sg_ids)
+
     return sg_ids
 
 

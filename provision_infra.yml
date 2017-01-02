@@ -25,8 +25,8 @@
     # FLAGS:  flags to turn on/off features - for faster testing ;)
     #
     provision_secgrp: false
-    provision_network: true
-    provision_router: true
+    provision_network: false
+    provision_router: false
     provision_jumpsvr: true
     K5_DEBUG: "{{ lookup('env','K5_DEBUG')|default(False) }}"
 
@@ -70,12 +70,15 @@
 
       when: provision_secgrp == true
 
-    - block:
+    #
+    # Authenticate to K5
+    #
+    - name: "Authenticate to K5"
+      # use openrc environment variables
+      k5_auth:
+      register: k5_auth_reg
 
-      - name: "Authenticate to K5"
-        # use openrc environment variables
-        k5_auth:
-        register: k5_auth_reg
+    - block:
 
       - debug: var=k5_auth_reg.k5_auth_facts.auth_token
  
