@@ -63,14 +63,17 @@ networks:
     external: False
     subnet: "nx-subnet-1a-proxylan"
     cidr: "10.70.1.0/24"
+    gateway_ip: "10.70.1.254"
   - name: "nx-network-1a-appslan"
     external: False
     subnet : "nx-subnet-1a-appslan"
     cidr: "10.70.2.0/24"
+    gateway_ip: "10.70.2.254"
   - name: "nx-network-1a-dblan"
     external: False
     subnet: "nx-subnet-1a-dblan"
     cidr: "10.70.3.0/24"
+    gateway_ip: "10.70.3.254"
   
 router:
   name: "nx-router-1a-demo01"

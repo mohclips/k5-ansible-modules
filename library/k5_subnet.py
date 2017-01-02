@@ -280,7 +280,7 @@ def main():
         cidr = dict(required=True, default=None, type='str'),
         network_name = dict(required=True, default=None, type='str'),
         dns = dict(required=False, default=None, type='list'),
-        gateway_ip = dict(required=False, default=None, type='str'),
+        gateway_ip = dict(required=True, default=None, type='str'),
         availability_zone = dict(required=True, default=None, type='str'),
         k5_auth = dict(required=True, default=None, type='dict')
     ) )

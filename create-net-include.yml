@@ -51,6 +51,7 @@
       network_name: "{{ outer_item.name }}"
       name: "{{ outer_item.subnet }}"
       cidr: "{{ outer_item.cidr }}"
+      gateway_ip: "{{ outer_item.gateway_ip }}"
       availability_zone: "{{ region.az }}"
       k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
 
