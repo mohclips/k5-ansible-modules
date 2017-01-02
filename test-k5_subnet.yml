@@ -27,13 +27,14 @@
 
     - debug: var=k5_network_reg
 
-    - name: "Create Subnet using os_subnet"
+    - name: "Create Subnet using k5_subnet"
       # https://docs.ansible.com/ansible/os_subnet_module.html
       k5_subnet:
         state: present
         network_name: "nx-test-net-1a"
         name: "nx-test-subnet-1a"
         cidr: "10.0.0.0/24"
+        gateway_ip: 10.0.0.1
         availability_zone: "uk-1a"
         k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
       register: subnet
