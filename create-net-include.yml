@@ -43,12 +43,15 @@
       availability_zone: "{{ region.az }}"
       k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
 
-  - name: "Create Subnet"
+  # we use the K5 API here to allocate a subnet within a particular AZ, os_subnet module does not honour this option
+  - name: "Create Subnet on K5"
     # https://docs.ansible.com/ansible/os_subnet_module.html
-    os_subnet:
+    k5_subnet:
       state: present
       network_name: "{{ outer_item.name }}"
       name: "{{ outer_item.subnet }}"
       cidr: "{{ outer_item.cidr }}"
+      availability_zone: "{{ region.az }}"
+      k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
 
 

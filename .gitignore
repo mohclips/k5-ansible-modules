@@ -5,3 +5,4 @@ openrc
 *.pyc
 *.retry
 git-usage
+*.swp

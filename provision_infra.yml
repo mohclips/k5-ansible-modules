@@ -77,8 +77,8 @@
         k5_auth:
         register: k5_auth_reg
 
-      - debug: var=k5_auth_reg
-        when: K5_DEBUG
+#      - debug: var=k5_auth_reg
+#        when: K5_DEBUG
 
       - debug: var=k5_auth_reg.k5_auth_facts.auth_token
  
