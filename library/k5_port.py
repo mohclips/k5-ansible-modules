@@ -150,8 +150,8 @@ def k5_get_security_group_ids_from_names(module, k5_facts):
 
     
     for sg in security_groups:
-        if sg in sgs:
-            sg_ids.append(n['id'])
+        if sg in sgs.keys():
+            sg_ids.append( sgs[sg] )
         else:
             module.fail_json(msg="Security Group " + sg +  " not found")
 
