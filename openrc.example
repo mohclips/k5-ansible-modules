@@ -8,3 +8,9 @@ export OS_VOLUME_API_VERSION=2
 export OS_IDENTITY_API_VERSION=3
 export OS_USER_DOMAIN_NAME=contract id
 export OS_DEFAULT_DOMAIN=contract id
+
+# for extra debug in the k5_ modules
+export K5_DEBUG=1
+
+# clean up
+alias clean-k5-envvars="env|grep OS_ ; unset $(env | awk -F= '/OS_/ {print $1}' | xargs); env|grep OS_ 
