@@ -37,48 +37,92 @@ requirements:
 '''
 
 EXAMPLES = '''
-# Create a network in an AZ
-- k5_network:
-     name: network-01
-     state: present
-     availability_zone: uk-1a
-     k5_auth: "{{ k5_auth_facts }}"
+# Create a port in an AZ
+- k5_port:
+        name: "nx-test-port-1a"
+        state: present
+        availability_zone: "uk-1a"
+        network_name: "nx-test-net-1a"
+        subnet_name: "nx-test-subnet-1a"
+        fixed_ip: "10.0.0.250"
+        security_groups:
+          - 'default'
+        k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
 '''
 
 RETURN = '''
-k5_router_facts:
-    description: Dictionary describing the router details.
-    returned: On success when router is created
+k5_port_facts:
+    description: Dictionary describing the port details.
+    returned: On success when port is created
     type: dictionary
     contains:
-        id:
-            description: Router ID.
+        admin_state_up: 
+            description: 
             type: string
-            sample: "474acfe5-be34-494c-b339-50f06aa143e4"
-        name:
-            description: Router name.
-            type: string
-            sample: "router1"
-        admin_state_up:
-            description: Administrative state of the router.
-            type: boolean
             sample: true
-        status:
-            description: The router status.
+        allowed_address_pairs: 
+            description: 
             type: string
-            sample: "ACTIVE"
-        tenant_id:
-            description: The tenant ID.
+            sample: [] 
+        availability_zone: 
+            description: 
             type: string
-            sample: "861174b82b43463c9edc5202aadc60ef"
-        external_gateway_info:
-            description: The external gateway parameters. Will always be null.
-            type: dictionary
-            sample: null
-        availability_zone:
-            description: The AZ the router was created in.
+            sample: uk-1a 
+        binding:vnic_type: 
+            description: 
             type: string
-            sample: uk-1a
+            sample: normal 
+        device_id: 
+            description: 
+            type: string
+            sample: ""
+        device_owner: 
+            description: 
+            type: string
+            sample: "" 
+        fixed_ips: 
+            description: 
+            type: list of dict
+            sample: [
+            {
+                ip_address: 
+                    description: 
+                    type: string
+                    sample: 10.0.0.253 
+                subnet_id: 
+                    description: 
+                    type: string
+                    sample: 909b6f95-8591-4887-8932-1798c5cd1eec
+            }
+        ]
+        id: 
+            description: 
+            type: string
+            sample: 024078fb-6d95-4405-a466-c5c6e38d143f
+        mac_address: 
+            description: 
+            type: string
+            sample: fa:16:3e:fd:98:10
+        name: 
+            description: 
+            type: string
+            sample: nx-test-port-1a
+        network_id: 
+            description: 
+            type: string
+            sample: 817d6306-c2b6-44be-b70b-ca6f4b35fd05 
+        security_groups: 
+            description: 
+            type: list
+            sample: [f214d25f-1352-42ee-a797-fa6bf163d6d6 ] 
+        status: 
+            description: 
+            type: string
+            sample: DOWN
+        tenant_id: 
+            description: 
+            type: string
+            sample: 9505d1dab17946ea97745d5de30cc8be
 '''
 
 
@@ -367,9 +411,9 @@ def k5_create_port(module):
     k5_debug_add('response json: {0}'.format(response.json()))
 
     if k5_debug:
-      module.exit_json(changed=True, msg="Port Creation Successful", k5_subnet_facts=response.json()['port'], debug=k5_debug_out )
+      module.exit_json(changed=True, msg="Port Creation Successful", k5_port_facts=response.json()['port'], debug=k5_debug_out )
 
-    module.exit_json(changed=True, msg="Port Creation Successful", k5_subnet_facts=response.json()['subnet'] )
+    module.exit_json(changed=True, msg="Port Creation Successful", k5_port_facts=response.json()['port'] )
 
 
 ######################################################################################
