@@ -6,27 +6,27 @@ ANSIBLE_METADATA = {'status': ['preview'],
 
 DOCUMENTATION = '''
 ---
-module: k5_network
-short_description: Create network on K5 in particular AZ
+module: k5_floating_ip
+short_description: Assign floatng ip to a port
 version_added: "1.0"
 description:
-    - Explicit K5 call to create a network in an AZ - replaces os_network from Openstack module, but is more limited. Use os_network to update the network. 
+    - Explicit K5 call to assign a floating ip to a port in an AZ - replaces os_port from Openstack module, but is limited to assign only
 options:
-   name:
+   server:
      description:
-        - Name of the network.
+        - Name of the server to attach the floating ip.
      required: true
      default: None
-   state:
+   fixed_ip:
      description:
-        - State of the network. Can only be 'present'.
+        - Local IP of the named server.
      required: true
      default: None
-   availability_zone:
+   ext_network:
      description:
-        - AZ to create the network in.
+        - External network to assign the flaoting IP from.
      required: true
-     default: None
+     default: None     
    k5_auth:
      description:
        - dict of k5_auth module output.
@@ -37,48 +37,69 @@ requirements:
 '''
 
 EXAMPLES = '''
-# Create a network in an AZ
-- k5_network:
-     name: network-01
-     state: present
-     availability_zone: uk-1a
+# Assign floating IP to server
+- k5_floating_ip:
+     server: myserver
+     fixed_ip: 172.16.0.4
+     ext_network: inf_az1_ext-net02
      k5_auth: "{{ k5_auth_facts }}"
 '''
 
+"k5_floatingip_facts": {
+            "availability_zone": "uk-1a", 
+            "fixed_ip_address": "10.70.1.253", 
+            "floating_ip_address": "62.60.51.187", 
+            "floating_network_id": "df8d3f21-75f2-412a-8fd9-29de9b4a4fa8", 
+            "id": "6f80ee49-d7fc-4653-bca7-1d32731003aa", 
+            "port_id": "5a1e6f5f-b885-42d2-8ae6-af04a845b354", 
+            "router_id": "94b4c06c-a5c3-47d7-af07-bc7766e17417", 
+            "status": "DOWN", 
+            "tenant_id": "9505d1dab17946ea97745d5de30cc8be"
+        }, 
+
+
 RETURN = '''
-k5_router_facts:
-    description: Dictionary describing the router details.
-    returned: On success when router is created
+k5_floatingip_facts:
+    description: Dictionary describing the floating ip details.
+    returned: On success when floating ip has been assigned
     type: dictionary
     contains:
-        id:
-            description: Router ID.
-            type: string
-            sample: "474acfe5-be34-494c-b339-50f06aa143e4"
-        name:
-            description: Router name.
-            type: string
-            sample: "router1"
-        admin_state_up:
-            description: Administrative state of the router.
-            type: boolean
-            sample: true
-        status:
-            description: The router status.
-            type: string
-            sample: "ACTIVE"
-        tenant_id:
-            description: The tenant ID.
-            type: string
-            sample: "861174b82b43463c9edc5202aadc60ef"
-        external_gateway_info:
-            description: The external gateway parameters. Will always be null.
-            type: dictionary
-            sample: null
-        availability_zone:
-            description: The AZ the router was created in.
+        availability_zone: 
+            description: AZ floating IP was created in
             type: string
             sample: uk-1a
+        fixed_ip_address: 
+            description: IP address floagin IP was assigned to
+            type: string
+            sample: 10.70.1.253
+        floating_ip_address: 
+            description: External IP address that was assigned
+            type: string
+            sample: 62.60.51.187
+        floating_network_id: 
+            description: Id of network that the floating IP was assigned
+            type: string
+            sample: df8d3f21-75f2-412a-8fd9-29de9b4a4fa8
+        id: 
+            description: ID of the floating IP
+            type: string
+            sample: 6f80ee49-d7fc-4653-bca7-1d32731003aa
+        port_id: 
+            description: ID of the port the floating IP was assigned
+            type: string
+            sample: 5a1e6f5f-b885-42d2-8ae6-af04a845b354 
+        router_id: 
+            description: ID of the router the floating IP was assgined through
+            type: string
+            sample: 94b4c06c-a5c3-47d7-af07-bc7766e17417
+        status: 
+            description: Status of the port
+            type: string
+            sample: DOWN
+        tenant_id: 
+            description: id of the tenant
+            type: string
+            sample: 9505d1dab17946ea97745d5de30cc8be
 '''
 
 
