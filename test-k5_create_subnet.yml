@@ -19,7 +19,7 @@
     - debug: var=k5_auth_reg.k5_auth_facts.auth_token
 
     - k5_create_network:
-        name: "nx-test-net-1a"
+        name: "nx-test-net2-1a"
         state: present
         availability_zone: "uk-1a"
         k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
@@ -31,10 +31,13 @@
       # https://docs.ansible.com/ansible/os_subnet_module.html
       k5_create_subnet:
         state: present
-        network_name: "nx-test-net-1a"
-        name: "nx-test-subnet-1a"
+        network_name: "nx-test-net2-1a"
+        name: "nx-test-subnet2-1a"
         cidr: "10.0.0.0/24"
         gateway_ip: 10.0.0.1
+        enable_dhcp: True
+        dhcp_pool_start: "10.0.0.10"
+        dhcp_pool_end: "10.0.0.50"
         availability_zone: "uk-1a"
         k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
       register: subnet

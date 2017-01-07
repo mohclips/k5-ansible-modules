@@ -42,6 +42,21 @@ options:
         - AZ to create the subnet in.
      required: true
      default: None
+   enable_dhcp:
+     description:
+        - Enable DHCP on the subnet.
+     required: true
+     default: None
+   dhcp_pool_start:
+     description:
+        - DHCP scope start.
+     required: false
+     default: None
+   dhcp_pool_end:
+     description:
+        - DHCP scope end.
+     required: false
+     default: None
    k5_auth:
      description:
        - dict of k5_auth module output.
@@ -57,9 +72,12 @@ EXAMPLES = '''
         state: present
         network_name: "nx-test-net-1a"
         name: "nx-test-subnet-1a"
-        cidr: "10.0.0.0/24"
-        gateway_ip: 10.0.0.1
+        cidr: "192.168.1.0/24"
+        gateway_ip: 192.168.1.1
         availability_zone: "uk-1a"
+        enable_dhcp: True
+        dhcp_pool_start: "192.168.1.10"
+        dhcp_pool_end: "192.168.1.240"
         k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
 '''
 
@@ -93,6 +111,9 @@ k5_subnet_facts:
             description: The external gateway parameters. Will always be null.
             type: dictionary
             sample: null
+
+
+
         availability_zone:
             description: The AZ the router was created in.
             type: string
@@ -249,6 +270,9 @@ def k5_create_subnet(module):
     cidr = module.params['cidr']
     dns = module.params['dns']
     gateway_ip = module.params['gateway_ip']
+    enable_dhcp = module.params['enable_dhcp']
+    dhcp_pool_start = module.params['dhcp_pool_start']
+    dhcp_pool_end = module.params['dhcp_pool_end']
 
     if k5_check_subnet_exists(module, k5_facts):
         if k5_debug:
@@ -277,6 +301,9 @@ def k5_create_subnet(module):
     k5_debug_add('dns: {0}'.format(dns))
     k5_debug_add('gateway_ip: {0}'.format(gateway_ip))
     k5_debug_add('az: {0}'.format(az))
+    k5_debug_add('enable_dhcp: {0}'.format(enable_dhcp))
+    k5_debug_add('dhcp_pool_start: {0}'.format(dhcp_pool_start))
+    k5_debug_add('dhcp_pool_end: {0}'.format(dhcp_pool_end))
 
     session = requests.Session()
 
@@ -284,15 +311,34 @@ def k5_create_subnet(module):
 
     url = endpoint + '/v2.0/subnets'
 
-    query_json = {"subnet": {
-        "name": subnet_name, 
-        "network_id": network_id, 
-        "cidr": cidr, 
-        "dns_nameservers": dns, 
-        "ip_version": 4, 
-        "gateway_ip": gateway_ip, 
-        "availability_zone": az
-        }}
+    if dhcp_pool_start is None or dhcp_pool_end is None:
+        query_json = {"subnet": {
+            "name": subnet_name, 
+            "network_id": network_id, 
+            "cidr": cidr, 
+            "dns_nameservers": dns, 
+            "ip_version": 4, 
+            "gateway_ip": gateway_ip, 
+            "availability_zone": az,
+            "enable_dhcp": enable_dhcp
+            }}
+    else:
+        query_json = {"subnet": {
+            "name": subnet_name, 
+            "network_id": network_id, 
+            "cidr": cidr, 
+            "dns_nameservers": dns, 
+            "ip_version": 4, 
+            "gateway_ip": gateway_ip, 
+            "availability_zone": az, 
+            "enable_dhcp": enable_dhcp,
+            "allocation_pools": [
+                {
+                    "start":dhcp_pool_start,
+                    "end":dhcp_pool_end
+                }
+            ]
+            }}
 
     k5_debug_add('endpoint: {0}'.format(endpoint))
     k5_debug_add('REQ: {0}'.format(url))
@@ -328,6 +374,9 @@ def main():
         dns = dict(required=False, default=None, type='list'),
         gateway_ip = dict(required=True, default=None, type='str'),
         availability_zone = dict(required=True, default=None, type='str'),
+        enable_dhcp = dict(required=False, default=True, type='str'),
+        dhcp_pool_start = dict(required=False, default=None, type='str'),
+        dhcp_pool_end = dict(required=False, default=None, type='str'),
         k5_auth = dict(required=True, default=None, type='dict')
     ) )
 
