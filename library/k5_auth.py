@@ -294,6 +294,8 @@ def k5_get_auth_token(module):
     # we authenticated, now check the token is present
     if 'X-Subject-Token' in response.headers.keys():
         auth_token = response.headers['X-Subject-Token']
+    elif 'x-subject-token' in response.headers.keys():      # fix for issue #1
+        auth_token = response.headers['x-subject-token']
     else:
         module.fail_json(msg="Token not found", k5_auth_facts=k5_debug)
 
