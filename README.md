@@ -5,6 +5,7 @@ This git repository contains examples of how to create infrastructure as code on
 Basically, in my day job i help people with Intrafructure as Code, automation and other such things.  I wrote these modules to help people access K5 more readily.  Plus it's a bit of fun. ;)
 
 As K5 is Availability Zone centric thus new modules were created to communicate with K5 which bypass limitations in the Ansible Openstack os modules.
+
 Primarily as K5 requires those working Availability Zone parameters. It seems from what i can tell that the underlying API 'shade' does not honour or process the availability zone parameters passed to it from Ansible.  I could have hacked about at the shade API i guess, which is probably a better idea for some of the modules, but it's easier to create new modules and more of a learning experience with Ansible module creation and K5 APIs.
 
 Hopefully the modules are simple enough for others to understand and offer addtional updated. 
@@ -24,6 +25,7 @@ Create a router in a specified Availability Zone
 ### k5_create_network
 
 Create a Network in a specified Availability Zone
+
 Also note the K5 API uses different parameters in the network module to regular OpenStack API calls.  
 
 ### k5_create_subnet
@@ -44,7 +46,9 @@ Return the openstack console logs for a defined server, the builds logs or somet
 
 ### k5_novnc_console
 
-Return the URL to a noVNC console for a defined server.  These URLs are time limited (for security purposes?).  Also only works in Japan East-1 at present while the update is rolled out across the various regions. (Jan2017) 
+Return the URL to a noVNC console for a defined server.  These URLs are time limited (for security purposes?).  
+
+Also only works in Japan East-1 at present while the update is rolled out across the various regions. (Jan2017) 
 
 ## Online API Guides
 
