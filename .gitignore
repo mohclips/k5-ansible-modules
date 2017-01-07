@@ -8,3 +8,4 @@ git-usage
 *.swp
 a.py
 b.py
+*~

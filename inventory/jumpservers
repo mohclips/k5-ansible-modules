@@ -1,2 +1,3 @@
 [jumpservers]
 nx-demo01-jumpserver ansible_host=62.60.42.219 ansible_user=ubuntu ansible_connection=ssh
+nx-demo01-1a-jumpserver ansible_host=62.60.51.232 ansible_user=ubuntu ansible_connection=ssh

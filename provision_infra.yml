@@ -96,7 +96,7 @@
 
       - name: "Create K5 Router"
         # we need to use specific K5 API calls here to utilise the AZ, which os_router does not handle
-        k5_router:
+        k5_create_router:
           name: "{{ router.name }}" 
           state: present
           availability_zone: "{{ region.az }}"

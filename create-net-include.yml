@@ -16,28 +16,10 @@
 #            region_name: "{{ region.name }}"
 #            availability_zone: "{{ region.az }}"
 
-#usage: openstack network create [-h] [-f {json,shell,table,value,yaml}]
-#                                [--share | --no-share] [--enable | --disable]
-#                                [--project <project>]
-#                                [--project-domain <project-domain>]
-#                                [--availability-zone-hint <availability-zone>]
-#                                [--enable-port-security | --disable-port-security]
-#                                [--external | --internal]
-#                                [--default | --no-default]
-#                                [--provider-network-type <provider-network-type>]
-#                                [--provider-physical-network <provider-physical-network>]
-#                                [--provider-segment <provider-segment>]
-#                                [--transparent-vlan | --no-transparent-vlan]
-#                                <name>
-        
-#        - name: "Create Network via Openstack CLI"
-#          command: openstack network create --availability-zone-hint "{{ region.az }}" --internal "{{ outer_item.name }}"
-#          ignore_errors: true
-
   # we use the K5 API here to allocate a network within a particular AZ, os_network module does not honour this option
   # once you have created the Network with k5_network, you can modify it with os_network, if you wish.
   - name: "Create Network on K5"
-    k5_network:
+    k5_create_network:
       name:  "{{ outer_item.name }}"
       state: present
       availability_zone: "{{ region.az }}"
@@ -46,7 +28,7 @@
   # we use the K5 API here to allocate a subnet within a particular AZ, os_subnet module does not honour this option
   - name: "Create Subnet on K5"
     # https://docs.ansible.com/ansible/os_subnet_module.html
-    k5_subnet:
+    k5_create_subnet:
       state: present
       network_name: "{{ outer_item.name }}"
       name: "{{ outer_item.subnet }}"
