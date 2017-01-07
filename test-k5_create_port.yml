@@ -1,0 +1,58 @@
+#!/usr/bin/env ansible-playbook
+# vim: noai:ts=2:sw=2:et
+---
+
+- name: "Test k5_network module"
+
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  tasks:
+
+    - k5_auth:
+        username: "crossn"
+        region_name: "uk-1"
+      register: k5_auth_reg
+
+    #- debug: var=k5_auth_reg
+    - debug: var=k5_auth_reg.k5_auth_facts.auth_token
+
+    - k5_create_network:
+        name: "nx-test-net-1a"
+        state: present
+        availability_zone: "uk-1a"
+        k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
+      register: k5_network_reg
+
+#    - debug: var=k5_network_reg
+
+    - name: "Create Subnet using k5_subnet"
+      # https://docs.ansible.com/ansible/os_subnet_module.html
+      k5_create_subnet:
+        state: present
+        network_name: "nx-test-net-1a"
+        name: "nx-test-subnet-1a"
+        cidr: "10.0.0.0/24"
+        gateway_ip: 10.0.0.1
+        availability_zone: "uk-1a"
+        k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
+      register: subnet
+
+#    - debug: var=subnet
+
+    - k5_create_port:
+        name: "nx-test-port-1a"
+        state: present
+        availability_zone: "uk-1a"
+        network_name: "nx-test-net-1a"
+        subnet_name: "nx-test-subnet-1a"
+        fixed_ip: "10.0.0.253"
+        security_groups:
+          - 'default'
+        k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
+      register: k5_port_reg
+
+    - debug: var=k5_port_reg
+
+

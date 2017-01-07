@@ -1,0 +1,38 @@
+#!/usr/bin/env ansible-playbook
+# vim: noai:ts=2:sw=2:et
+---
+
+- name: "Test k5_router module"
+
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  tasks:
+
+    - k5_auth:
+        username: "crossn"
+        region_name: "uk-1"
+      register: k5_auth_reg
+
+    #- debug: var=k5_auth_reg
+    #- debug: var=k5_auth_reg.k5_auth_facts.auth_token
+
+    - k5_create_router:
+        name: "nx-test-1a"
+        state: present
+        availability_zone: "uk-1a"
+        k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
+      register: k5_router_reg
+
+    - debug: var=k5_router_reg
+
+    # test if we can create another with the same name - should not be able to
+    - k5_create_router:
+        name: "nx-test-1a"
+        state: present
+        availability_zone: "uk-1a"
+        k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
+      register: k5_router_reg
+
+    - debug: var=k5_router_reg
