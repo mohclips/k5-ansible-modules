@@ -1,0 +1,25 @@
+#!/usr/bin/env ansible-playbook
+# vim: noai:ts=2:sw=2:et
+---
+
+- name: "Test k5_server_console_output module"
+
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  tasks:
+
+    - k5_auth:
+      register: k5_auth_reg
+
+    #- debug: var=k5_auth_reg
+    - debug: var=k5_auth_reg.k5_auth_facts.auth_token
+
+    - k5_server_console_output:
+        server_name: "nx-demo01-1a-jumpserver"
+        console_length: 1000
+        k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
+      register: k5_server_console_output_reg
+
+    - debug: var=k5_server_console_output_reg
