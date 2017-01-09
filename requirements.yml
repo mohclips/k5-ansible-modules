@@ -1,0 +1,5 @@
+---
+
+# Ansible Galaxy Role
+- src: tersmitten.dns 
+

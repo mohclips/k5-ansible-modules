@@ -1,0 +1,445 @@
+#!/usr/bin/env ansible-playbook
+# vim: noai:ts=2:sw=2:et
+---
+
+#
+# Install Guacamole
+#
+# v1.0 - 07 Jan 2017 - Nicholas Cross / Mohclips - initial release
+#
+
+- name: "Install Guacamole on the jumpservers"
+
+  hosts: jumpservers
+  connection: ssh
+  gather_facts: yes
+
+  become: yes
+  become_user: root
+
+  vars:
+
+    # 
+    provision_dns: false
+    provision_apt: false
+    provision_src: false
+    provision_tomcat: false
+    provision_mysql: false
+    provision_guacamole: false
+    config_ssl_tomcat: true
+
+    tomcat:
+      keystore_path: /etc/tomcat_keystore
+      keystore: guacamole_tomcat.jks
+      key:
+        alias: guac
+        crt_file: guac.crt
+        dname: "CN=ptsgdemo.com, OU=Fujitsu, O=PTSG, L=Stevenage, ST=Hertfordshire, C=UK"
+        pass: "t0mc4t_secr3tP4s$"
+        alg: RSA
+        size: 2048
+        expires: 730
+
+    guacamole:
+      dependancies:
+        - libcairo2-dev 
+        - libjpeg62-dev 
+        - libpng12-dev 
+        - libossp-uuid-dev 
+        - libfreerdp-dev 
+        - libpango1.0-dev 
+        - libssh2-1-dev 
+        - libssh-dev 
+        - tomcat7 
+        - tomcat7-admin 
+        - tomcat7-user 
+        - haveged   # fixes /dev/random issue
+        # to compile the intial code
+        - autotools-dev
+        - autoconf
+        - automake
+        - gcc
+        - make
+        # for SQL Auth
+        - mysql-server
+        - mysql-client
+        - mysql-common 
+        - mysql-utilities
+        - python-mysqldb
+
+
+      # gucomole
+      source_code_path: /opt/guacamole-installs
+
+      #source_code: http://apache.org/dyn/closer.cgi?action=download&filename=incubator/guacamole/0.9.10-incubating/source/guacamole-server-0.9.10-incubating.tar.gz
+      source_code: http://mirrors.ukfast.co.uk/sites/ftp.apache.org/incubator/guacamole/0.9.10-incubating/source/guacamole-server-0.9.10-incubating.tar.gz
+      client: http://mirrors.ukfast.co.uk/sites/ftp.apache.org/incubator/guacamole/0.9.10-incubating/binary/guacamole-0.9.10-incubating.war
+      auth_jdbc: http://mirrors.ukfast.co.uk/sites/ftp.apache.org/incubator/guacamole/0.9.10-incubating/binary/guacamole-auth-jdbc-0.9.10-incubating.tar.gz    
+      mysql_conn: https://dev.mysql.com/get/Downloads/Connector-J/mysql-connector-java-5.1.40.tar.gz  
+
+    
+      
+
+      paths:
+        - /opt/guacamole-installs
+        - /etc/guacamole
+        - /etc/guacamole/lib
+        - /etc/guacamole/extensions
+#        - /usr/share/tomcat7/.guacamole
+  
+      db: 
+        root_password: "Secr3tDBP4$$1077"
+        name: guacamole_db 
+        user: guacamole_user
+        user_pass: "SomeP6$$1289%%"
+
+
+    # for dns role
+    dns_remove_resolvconf: true
+    #dns_domain: ''
+    dns_nameservers: 
+      - 8.8.8.8
+      - 8.8.4.4
+    #dns_searches:
+    #dns_dhclient_rules:
+    #dns_dhclient_file: /etc/dhcp/dhclient.conf
+
+  roles:
+    - { role: tersmitten.dns, when: "provision_dns == true" }
+
+  tasks:
+
+    # Apt
+    - block:
+
+      - name: "Update server - make sure it is currently patched to date"
+        apt:
+          upgrade: dist
+          update_cache: yes
+        register: update
+
+      - debug: var=update
+
+      - name: "Install Guacamole library requirements"
+        apt:
+          name: "{{ item }}"
+          state: present
+          install_recommends: no      
+        with_items:
+          "{{ guacamole.dependancies }}"
+      
+      when: provision_apt 
+
+    - name: "Create folders"
+      file:
+        path: "{{ item }}"         
+        state: directory
+        mode: 0755
+      with_items:
+        "{{ guacamole.paths }}"
+
+    # Guacamole Source
+    - block:
+      - name: "Download Server source and unpack"
+        unarchive: 
+          src: "{{ guacamole.source_code }}"
+          dest: "{{ guacamole.source_code_path }}"
+          remote_src: true
+
+      - name: "configure"
+        command: ./configure --with-init-dir=/etc/init.d
+        args:
+          chdir: "{{ guacamole.source_code_path }}/guacamole-server-0.9.10-incubating" 
+        register: output
+      - debug: var=output.stdout_lines
+
+      - name: "make"
+        command: make
+        args:
+          chdir: "{{ guacamole.source_code_path }}/guacamole-server-0.9.10-incubating" 
+        register: output
+      - debug: var=output.stdout_lines
+
+      - name: "make install"
+        command: make install
+        args:
+          chdir: "{{ guacamole.source_code_path }}/guacamole-server-0.9.10-incubating" 
+        register: output
+      - debug: var=output.stdout_lines
+
+      - name: "ldconfig"
+        command: ldconfig
+        args:
+          chdir: "{{ guacamole.source_code_path }}/guacamole-server-0.9.10-incubating" 
+        register: output
+      - debug: var=output.stdout_lines
+
+      when: provision_src
+
+
+    # Tomcat
+    - block:
+
+      - name: "Download Guacamole Client"
+        get_url: 
+          url: "{{ guacamole.client }}"
+          dest: "{{ guacamole.source_code_path }}"
+
+      - name: "stat client war file"
+        stat: path="{{ guacamole.source_code_path }}/guacamole-0.9.10-incubating.war"
+        register: foo_stat
+       
+      - name: "Move war file to Tomcat webapps"
+        command: mv "{{ guacamole.source_code_path }}/guacamole-0.9.10-incubating.war" /var/lib/tomcat7/webapps/guacamole.war
+        when: foo_stat.stat.exists
+        notify:
+          - restart_tomcat
+          - restart_guacd
+
+     
+      - name: "Download auth_jdbc and unpack"
+        unarchive: 
+          src: "{{ guacamole.auth_jdbc }}"
+          dest: "{{ guacamole.source_code_path }}"
+          remote_src: true
+
+      - name: "stat jdbc jar file"
+        stat: path="{{ guacamole.source_code_path }}/guacamole-auth-jdbc-0.9.10-incubating/mysql/guacamole-auth-jdbc-mysql-0.9.10-incubating.jar"
+        register: foo_stat
+       
+      - name: "Move jar file to /etc/guacamole/extensions/"
+        command: mv "{{ guacamole.source_code_path }}/guacamole-auth-jdbc-0.9.10-incubating/mysql/guacamole-auth-jdbc-mysql-0.9.10-incubating.jar" /etc/guacamole/extensions/
+        when: foo_stat.stat.exists
+        notify:
+          - restart_mysql
+
+      - name: "Download mysql_conn java and unpack"
+        unarchive: 
+          src: "{{ guacamole.mysql_conn }}"
+          dest: "{{ guacamole.source_code_path }}"
+          remote_src: true
+
+      - name: "stat mysql jar file"
+        stat: path="{{ guacamole.source_code_path }}/mysql-connector-java-5.1.40/mysql-connector-java-5.1.40-bin.jar"
+        register: foo_stat
+       
+      - name: "Move jar file to /etc/guacamole/lib/"
+        command: mv "{{ guacamole.source_code_path }}/mysql-connector-java-5.1.40/mysql-connector-java-5.1.40-bin.jar" /etc/guacamole/lib/
+        when: foo_stat.stat.exists
+        notify:
+          - restart_mysql
+
+      when: provision_tomcat
+
+    # MySQL
+    - block:
+
+      # some security 
+      - name: "drop demo db"
+        mysql_db:
+          name: demo
+          state: absent
+
+      - name: "ensure anonymous users are not in the database"
+        mysql_user: name='' host="{{ item }}" state=absent
+        with_items:
+          - "localhost"
+          - "{{ inventory_hostname }}"
+
+      - name: "update mysql root password for all root accounts"
+        mysql_user: name=root host="{{ item }}" password="{{ guacamole.db.root_password }}"
+        with_items:
+          - "{{ ansible_hostname }}"
+          - "127.0.0.1"
+          - "::1"
+
+      # guacamole db setup
+
+      - name: "drop guacamole db" # idempotent it is not, so drop again DANGEROUS
+        mysql_db:
+          state: absent
+          name: "{{ guacamole.db.name }}"
+
+      - name: "create guacamole db"
+        mysql_db:
+          state: present
+          name: "{{ guacamole.db.name }}"
+
+      - name: "create guacamole db user"
+        mysql_user:
+          name: "{{ guacamole.db.user }}"
+          password: "{{ guacamole.db.user_pass }}"
+          state: present
+          priv: '{{ guacamole.db.name }}.*:SELECT,INSERT,UPDATE,DELETE'
+
+
+      - name: "import mysql setup"
+        mysql_db:
+          state: import
+          name: "{{ guacamole.db.name }}"
+          target: "{{ item }}"
+        with_items:
+          - "{{ guacamole.source_code_path }}/guacamole-auth-jdbc-0.9.10-incubating/mysql/schema/001-create-schema.sql"
+          - "{{ guacamole.source_code_path }}/guacamole-auth-jdbc-0.9.10-incubating/mysql/schema/002-create-admin-user.sql"
+      
+      
+
+      when: provision_mysql
+
+
+    # Guacamole
+    - block:
+
+      # required libs
+      # ln -s /usr/local/lib/freerdp/* /usr/lib/x86_64-linux-gnu/freerdp/.
+      - name: "Symlink required libs"
+        file:
+          src: /usr/local/lib/freerdp/*
+          dest: /usr/lib/x86_64-linux-gnu/freerdp/.
+          state: link
+
+      # without this, tomcat does not authenticate
+      - name: "Update Tomcat HOME for Guacamole" 
+        lineinfile:
+          dest: /etc/default/tomcat7
+          regexp: '^GUACAMOLE_HOME='
+          line: 'GUACAMOLE_HOME=/etc/guacamole'
+
+      # i dont like these they should be idempotent
+      - name: "Remove Tomcat Guacamole folder"
+        command: rm -rf /usr/share/tomcat7/.guacamole
+        ignore_errors: true
+ 
+      - name: "Create link to Tomcat Guacamole properties inside .guacamole"
+        file: 
+          src: /etc/guacamole/guacamole.properties 
+          dest: /usr/share/tomcat7/.guacamole
+          state: link
+        #ignore_errors: true
+
+      - name: "Guacamole Properties upload"
+        template:
+          src: templates/guacamole.properties.j2
+          dest: /etc/guacamole/guacamole.properties
+          owner: root
+          group: root
+          mode: 0644
+        notify:
+          - restart_guacd
+          - restart_tomcat
+
+      when: provision_guacamole
+
+      ### It works with BASIC HTTP up to here.
+
+
+      # config ssl tomcat
+    - block:
+      
+        - name: "Create keystore folder"
+          file:
+            path: "{{ tomcat.keystore_path }}"         
+            state: directory
+
+        - name: "stat keystore file"
+          stat: path="{{ tomcat.keystore_path }}/{{ tomcat.keystore }}"
+          register: foo_stat
+ 
+        - name: "Create keystore file"   
+          command: keytool -genkey -keystore "{{ tomcat.keystore_path }}/{{ tomcat.keystore }}" -alias "{{ tomcat.key.alias }}" -dname "{{ tomcat.key.dname }}" -storepass "{{ tomcat.key.pass }}" -keypass "{{ tomcat.key.pass }}" -keyalg "{{ tomcat.key.alg }}" -keysize "{{ tomcat.key.size }}" -validity "{{ tomcat.key.expires }}"
+          when: not foo_stat.stat.exists
+
+        - name: "server.xml upload"
+          template:
+            src: templates/server.xml.j2
+            dest: /etc/tomcat7/server.xml
+            owner: root
+            group: root
+            mode: 0644
+
+        - name: "HTTP only cookies in context.xml"  
+          lineinfile:
+            dest: /etc/tomcat7/context.xml
+            regexp: "^<Context"
+            line: "<Context useHttpOnly='true'>"
+
+        - name: "Force HTTPS in web.xml"
+          blockinfile:
+            dest: /etc/tomcat7/web.xml
+            marker: "<!-- {mark} ANSIBLE MANAGED BLOCK -->"
+            insertbefore: "</web-app>"
+            content: |
+              <!-- force HTTPS -->
+              <security-constraint> 
+                <web-resource-collection> 
+                  <web-resource-name>Protected Context</web-resource-name> 
+                  <url-pattern>/*</url-pattern>
+                </web-resource-collection> 
+                <user-data-constraint> 
+                  <transport-guarantee>CONFIDENTIAL</transport-guarantee> 
+                </user-data-constraint> 
+              </security-constraint>
+
+        - name: "remove default web dir contents ROOT"
+          file: 
+            path: "/var/lib/tomcat7/webapps/ROOT/"
+            state: absent
+
+        - name: "recreate default web dir contents ROOT"
+          file: 
+            path: "/var/lib/tomcat7/webapps/ROOT/"
+            state: directory
+            mode: 0755
+
+  
+
+        - name: "Create redirect code to guacamole in default ROOT index.jsp"
+          lineinfile:
+            dest: /var/lib/tomcat7/webapps/ROOT/index.jsp
+            state: present
+            create: yes
+            regexp: "^<meta"
+            line: '<meta http-equiv="refresh" content="0;url=/guacamole/"/>'
+
+        - name: "Notify TomCat to restart"
+          debug: msg="Go restart it dude..."
+          changed_when: true
+          notify:
+            - restart_tomcat
+            - wait_for_tomcat
+
+
+      when: config_ssl_tomcat
+
+
+  handlers:
+    - name: "restart_tomcat"
+      service:
+        name: tomcat7
+        state: restarted
+        enabled: true
+
+    - name: "wait_for_tomcat"
+      uri:
+        url: "http://{{ ansible_ssh_host }}:8443/"
+        validate_certs: no
+      register: result
+      until: result['status']|default(0) == 200
+      retries: 15
+      delay: 3
+
+  
+    - name: "restart_guacd"
+      service:
+        name: guacd
+        state: restarted
+        enabled: true
+
+    - name: "restart_mysql"
+      service:
+        name: guacd
+        state: restarted
+        enabled: true
+
+
+      

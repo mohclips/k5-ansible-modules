@@ -30,6 +30,7 @@ security_groups:
     description: "Rules for the Proxy Lan Jump Box only"
     rules:
       # source here SHOULD BE your source device, NOT any old device on the internet
+      - { comment: "any_guacamole_web", source: "0.0.0.0/0", protocol: "tcp", port: "8080", direction: "ingress" }
       - { comment: "any_ssh", source: "0.0.0.0/0", protocol: "tcp", port: "22", direction: "ingress" }
       - { comment: "any_icmp", source: "0.0.0.0/0", protocol: "icmp", port: "-1", direction: "ingress" }
 
