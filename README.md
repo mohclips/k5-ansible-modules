@@ -2,7 +2,7 @@
 
 This git repository contains examples of how to create infrastructure as code on the Fujitsu K5 Cloud.
 
-Basically, in my day job i help people with Intrafructure as Code, automation and other such things.  I wrote these modules to help people access K5 more readily.  Plus it's a bit of fun. ;)
+Basically, in my day job I help people with Intrafructure as Code, automation and other such things.  I wrote these modules to help people access K5 more readily.  Plus it's a bit of fun. ;)
 
 As K5 is Availability Zone centric new modules were created to communicate with K5 which then bypass limitations in the Ansible Openstack os modules.
 
@@ -16,7 +16,7 @@ Hopefully the modules are simple enough for others to understand and offer addti
 
 ### k5_auth
 
-Authenticate to K5, use the returned facts to authenticate on eacj of the below modules.
+Authenticate to K5, use the returned facts to authenticate on each of the below modules.
 
 ### k5_create_router
 
