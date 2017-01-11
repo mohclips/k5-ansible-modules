@@ -2,10 +2,10 @@
 # ssh config to allow pass thru from the jump server to the other lans
 #
 Host  10.70.1.*  10.70.2.*  10.70.3.*  
-  ProxyCommand ssh -W %h:%p 62.60.51.109
+  ProxyCommand ssh -W %h:%p 62.60.51.196
   IdentityFile ./NickCross1a.pem
 
-Host 62.60.51.109
+Host 62.60.51.196
   User ubuntu
   IdentityFile ./NickCross1a.pem
   ControlMaster auto

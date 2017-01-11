@@ -24,8 +24,9 @@
     provision_apt: false
     provision_src: false
     provision_tomcat: false
+    provision_mysql_security: false
     provision_mysql: false
-    provision_guacamole: false
+    provision_guacamole: true
     config_ssl_tomcat: true
 
     tomcat:
@@ -93,6 +94,10 @@
         user: guacamole_user
         user_pass: "SomeP6$$1289%%"
 
+      # used by the change admin user sql template
+      web:
+        admin_username: "fj_jumpserver_admin"
+        admin_password: "Spec ial Jum p%Ser ver&1989--"
 
     # for dns role
     dns_remove_resolvconf: true
@@ -252,6 +257,11 @@
           - "{{ ansible_hostname }}"
           - "127.0.0.1"
           - "::1"
+          - localhost
+
+      when: provision_mysql_security
+
+    - block: 
 
       # guacamole db setup
 
@@ -259,11 +269,13 @@
         mysql_db:
           state: absent
           name: "{{ guacamole.db.name }}"
+          login_password: "{{ guacamole.db.root_password }}"
 
       - name: "create guacamole db"
         mysql_db:
           state: present
           name: "{{ guacamole.db.name }}"
+          login_password: "{{ guacamole.db.root_password }}"
 
       - name: "create guacamole db user"
         mysql_user:
@@ -271,6 +283,7 @@
           password: "{{ guacamole.db.user_pass }}"
           state: present
           priv: '{{ guacamole.db.name }}.*:SELECT,INSERT,UPDATE,DELETE'
+          login_password: "{{ guacamole.db.root_password }}"
 
 
       - name: "import mysql setup"
@@ -278,11 +291,31 @@
           state: import
           name: "{{ guacamole.db.name }}"
           target: "{{ item }}"
+          login_password: "{{ guacamole.db.root_password }}"
         with_items:
           - "{{ guacamole.source_code_path }}/guacamole-auth-jdbc-0.9.10-incubating/mysql/schema/001-create-schema.sql"
           - "{{ guacamole.source_code_path }}/guacamole-auth-jdbc-0.9.10-incubating/mysql/schema/002-create-admin-user.sql"
-      
-      
+     
+
+      - name: "create update admin password sql"
+        template:
+          src: "templates/guacamole_admin_change.sql.j2"
+          dest: "{{ guacamole.source_code_path }}/guacamole_admin_change.sql"
+          owner: root
+          group: root
+          mode: 0600
+
+      - name: "update admin user and pass"
+        mysql_db:
+          state: import
+          name: "{{ guacamole.db.name }}"
+          target: "{{ guacamole.source_code_path }}/guacamole_admin_change.sql"
+          login_password: "{{ guacamole.db.root_password }}"
+ 
+      - name: "delete update admin sql"
+        file: 
+          state: absent
+          path: "{{ guacamole.source_code_path }}/guacamole_admin_change.sql" 
 
       when: provision_mysql
 
@@ -290,13 +323,15 @@
     # Guacamole
     - block:
 
-      # required libs
-      # ln -s /usr/local/lib/freerdp/* /usr/lib/x86_64-linux-gnu/freerdp/.
+      # required libs 
       - name: "Symlink required libs"
-        file:
-          src: /usr/local/lib/freerdp/*
-          dest: /usr/lib/x86_64-linux-gnu/freerdp/.
-          state: link
+        command: ln -s /usr/local/lib/freerdp/* /usr/lib/x86_64-linux-gnu/freerdp/.
+        ignore_errors: true
+# this doesnt work
+#        file:
+#          src: /usr/local/lib/freerdp/*
+#          dest: /usr/lib/x86_64-linux-gnu/freerdp/.
+#          state: link
 
       # without this, tomcat does not authenticate
       - name: "Update Tomcat HOME for Guacamole" 
@@ -311,11 +346,13 @@
         ignore_errors: true
  
       - name: "Create link to Tomcat Guacamole properties inside .guacamole"
-        file: 
-          src: /etc/guacamole/guacamole.properties 
-          dest: /usr/share/tomcat7/.guacamole
-          state: link
-        #ignore_errors: true
+        command:  ln -s /etc/guacamole/guacamole.properties /usr/share/tomcat7/.guacamole
+        ignore_errors: true
+# this does not work
+#        file: 
+#          src: /etc/guacamole/guacamole.properties 
+#          dest: /usr/share/tomcat7/.guacamole
+#          state: link
 
       - name: "Guacamole Properties upload"
         template:
@@ -401,7 +438,7 @@
             regexp: "^<meta"
             line: '<meta http-equiv="refresh" content="0;url=/guacamole/"/>'
 
-        - name: "Notify TomCat to restart"
+        - name: "Notify TomCat to restart and wait for it to complete"
           debug: msg="Go restart it dude..."
           changed_when: true
           notify:
@@ -421,7 +458,7 @@
 
     - name: "wait_for_tomcat"
       uri:
-        url: "http://{{ ansible_ssh_host }}:8443/"
+        url: "https://{{ ansible_ssh_host }}:8443/"
         validate_certs: no
       register: result
       until: result['status']|default(0) == 200
