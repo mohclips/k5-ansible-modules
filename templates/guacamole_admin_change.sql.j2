@@ -1,0 +1,9 @@
+--
+-- change default admin username and password
+--
+
+SET @salt = UNHEX(SHA2(UUID(), 256));
+SET @username = "{{ guacamole.web.admin_username }}";
+SET @PASSWORD = "{{ guacamole.web.admin_password }}";
+UPDATE guacamole_user SET username=@USERNAME,password_salt=@SALT,password_hash=UNHEX(SHA2(CONCAT(@PASSWORD, HEX(@salt)), 256)) WHERE user_id=1;
+
