@@ -1,4 +1,3 @@
-#!/usr/bin/env ansible-playbook
 # vim: noai:ts=2:sw=2:et
 ---
 
@@ -22,20 +21,35 @@
     # use the include_vars instead to read vars/
 
     #
-    # FLAGS:  flags to turn on/off features - for faster testing ;)
+    # FLAGS: tags to turn on/off features - for faster testing ;)
     #
-    provision_secgrp: false
-    provision_network: false
-    provision_router: false
-    provision_jumpsvr: true
+    # t_secgrp
+    # t_network
+    # t_router
+    # t_jumpsvr
+
     K5_DEBUG: "{{ lookup('env','K5_DEBUG')|default(False) }}"
 
   tasks:
-    # we pull in our vars from everything in the 'vars' folder
-    - include_vars: 
-        dir: "vars"
-        depth: 1
+########################################################################################################
+    - block:
+      # we pull in our vars from everything in the 'vars' folder
+      - include_vars: 
+          dir: "vars"
+          depth: 1
 
+      #
+      # Authenticate to K5
+      #
+      - name: "Authenticate to K5"
+        # use openrc environment variables
+        k5_auth:
+        register: k5_auth_reg
+        
+      - debug: var=k5_auth_reg.k5_auth_facts.auth_token
+      tags: always
+
+########################################################################################################
     - block:
       # create Security Groups and rules
       #   Ok, the following code is a little complex, but there is a reason for this.
@@ -68,20 +82,12 @@
           - "{{ security_groups }}"
           - rules
 
-      when: provision_secgrp == true
+      tags: t_secgrp
+########################################################################################################
 
-    #
-    # Authenticate to K5
-    #
-    - name: "Authenticate to K5"
-      # use openrc environment variables
-      k5_auth:
-      register: k5_auth_reg
-
+########################################################################################################
     - block:
 
-      - debug: var=k5_auth_reg.k5_auth_facts.auth_token
- 
       # create Networks and Subnets
       # we use an include to loop over a number of tasks at once that use common values
       - name: "Create Networks and Subnets"
@@ -90,8 +96,9 @@
         loop_control:
           loop_var: outer_item
 
-      when: provision_network == true
+      tags: t_network
 
+########################################################################################################
     - block: 
 
       - name: "Create K5 Router"
@@ -121,8 +128,9 @@
           interfaces:
             "{{ router.subnets }}"
 
-      when: provision_router == true 
+      tags: t_router
 
+########################################################################################################
     - block:
       # create a Jump sever
       # this is done separately so that the jump server
@@ -130,15 +138,7 @@
       - name: "Create Jump box"
         include: create-jumpserver-include.yml
 
-      when: provision_jumpsvr == true 
+      tags: t_jumpsvr 
 
-
-
-
-    #
-    # create servers
-    #
-#    - name: "Create Infrastructure Servers"
-#      include: create-infra-servers-include.yml
-
+########################################################################################################
 

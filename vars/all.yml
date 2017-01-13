@@ -30,9 +30,11 @@ security_groups:
     description: "Rules for the Proxy Lan Jump Box only"
     rules:
       # source here SHOULD BE your source device, NOT any old device on the internet
-      - { comment: "any_guacamole_web", source: "0.0.0.0/0", protocol: "tcp", port: "8080", direction: "ingress" }
+      - { comment: "any_guacamole_http", source: "0.0.0.0/0", protocol: "tcp", port: "8080", direction: "ingress" }
+      - { comment: "any_guacamole_https", source: "0.0.0.0/0", protocol: "tcp", port: "8443", direction: "ingress" }
       - { comment: "any_ssh", source: "0.0.0.0/0", protocol: "tcp", port: "22", direction: "ingress" }
       - { comment: "any_icmp", source: "0.0.0.0/0", protocol: "icmp", port: "-1", direction: "ingress" }
+      - { comment: "jumpbox_ssh", source: "10.70.1.253/32", protocol: "tcp", port: "22", direction: "ingress" }
 
   - name: "nx-az1a-proxylan"
     description: "Rules for the Proxy Lan but not the Jump Box"
@@ -40,6 +42,8 @@ security_groups:
       - { comment: "any_80", source: "0.0.0.0/0", protocol: "tcp", port: "80", direction: "ingress" }
       - { comment: "any_443", source: "0.0.0.0/0", protocol: "tcp", port: "443", direction: "ingress" }
       - { comment: "proxylan_icmp", source: "10.70.1.0/0", protocol: "icmp", port: "-1", direction: "ingress" }
+      - { comment: "jumpbox_ssh", source: "10.70.1.253/32", protocol: "tcp", port: "22", direction: "ingress" }
+      - { comment: "jumpbox_rdp", source: "10.70.1.253/32", protocol: "tcp", port: "3389", direction: "ingress" }
     
   - name: "nx-az1a-appslan"
     description: "Rules for the Apps Lan"
@@ -49,7 +53,9 @@ security_groups:
       - { comment: "proxylan_443", source: "10.70.1.0/0", protocol: "tcp", port: "443", direction: "ingress" }
       - { comment: "appslan_icmp", source: "10.70.2.0/0", protocol: "icmp", port: "-1", direction: "ingress" }
       - { comment: "proxylan_icmp", source: "10.70.1.0/0", protocol: "icmp", port: "-1", direction: "ingress" }
-           
+      - { comment: "jumpbox_ssh", source: "10.70.1.253/32", protocol: "tcp", port: "22", direction: "ingress" }
+      - { comment: "jumpbox_rdp", source: "10.70.1.253/32", protocol: "tcp", port: "3389", direction: "ingress" }
+            
   - name: "nx-az1a-dblan"
     description: "Rules for the DB Lan"
     rules: 
@@ -58,21 +64,26 @@ security_groups:
       - { comment: "dblan_mysql", source: "10.70.3.0/0", protocol: "tcp", port: "3306", direction: "ingress" }
       - { comment: "proxylan_icmp", source: "10.70.2.0/0", protocol: "icmp", port: "-1", direction: "ingress" }
       - { comment: "dblan_icmp", source: "10.70.3.0/0", protocol: "icmp", port: "-1", direction: "ingress" }
-
+      - { comment: "jumpbox_ssh", source: "10.70.1.253/32", protocol: "tcp", port: "22", direction: "ingress" }
+      - { comment: "jumpbox_rdp", source: "10.70.1.253/32", protocol: "tcp", port: "3389", direction: "ingress" }
+ 
 networks: 
   - name: "nx-network-1a-proxylan"
     external: False
     subnet: "nx-subnet-1a-proxylan"
     cidr: "10.70.1.0/24"
+    dns: [ 8.8.8.8, 8.8.4.4 ]
     gateway_ip: "10.70.1.254"
   - name: "nx-network-1a-appslan"
     external: False
     subnet : "nx-subnet-1a-appslan"
+    dns: [ 8.8.8.8, 8.8.4.4 ]
     cidr: "10.70.2.0/24"
     gateway_ip: "10.70.2.254"
   - name: "nx-network-1a-dblan"
     external: False
     subnet: "nx-subnet-1a-dblan"
+    dns: [ 8.8.8.8, 8.8.4.4 ]
     cidr: "10.70.3.0/24"
     gateway_ip: "10.70.3.254"
   
