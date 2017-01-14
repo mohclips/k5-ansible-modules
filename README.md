@@ -62,7 +62,7 @@ Initially see the test cases for really simple invocation.
 
 Set the following if you wish, this is the easiest way and compatible with the env vars of the OpenStack CLI comand.
 
-Or use the parameters in k5_auth.
+Or use the parameters in ```k5_auth```.
 
 ```bash
  export OS_USERNAME=obvs
@@ -74,6 +74,8 @@ Or use the parameters in k5_auth.
 
 Update vars/all.yml with your infrastructure settings.
 
-Then run the playbook  provision_infra.yml
+Then run the playbook  ```provision_infra.yml```
 
+### Jump Server
 
+There is a jumpserver created, simple Ubuntu 14.04, at the end of ```provision_infras.yml```  This then pulls in another git repo of mine ```ansible-guacamole``` to create a HTML5 based terminal server.  See that git repo for more.

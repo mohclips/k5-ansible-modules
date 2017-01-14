@@ -1,8 +1,0 @@
-# vim: noai:ts=2:sw=2:et
----
-
-guacDBpass: "SomeSecretPass1889%"
-
-guacuser: guacadmin
-#  Aw3somePass
-guacpass: 0e64271ec49b927fcb340275f8d07aca
