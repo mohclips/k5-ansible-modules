@@ -79,3 +79,5 @@ Then run the playbook  ```provision_infra.yml```
 ### Jump Server
 
 There is a jumpserver created, simple Ubuntu 14.04, at the end of ```provision_infras.yml```  This then pulls in another git repo of mine ```ansible-guacamole``` to create a HTML5 based terminal server.  See that git repo for more.
+
+If you wanted to rebuild the jumpserver.  Then this would be a good start ```ansible-playbook ./provision_infra.yml --tags=t_jumpsvr```.  It will then delete the jumpserver and re-create it, including the guacamole service.
