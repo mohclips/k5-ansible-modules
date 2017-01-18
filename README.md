@@ -58,6 +58,8 @@ http://www.fujitsu.com/global/solutions/cloud/k5/guides/
 
 Initially see the test cases for really simple invocation.
 
+Use my other repo to see a working example:  https://github.com/mohclips/k5-ansible-infra
+
 ### openrc
 
 Set the following if you wish, this is the easiest way and compatible with the env vars of the OpenStack CLI comand.
@@ -71,13 +73,3 @@ Or use the parameters in ```k5_auth```.
  export OS_REGION_NAME=uk-1
  export OS_USER_DOMAIN_NAME=contract id
 ```
-
-Update vars/all.yml with your infrastructure settings.
-
-Then run the playbook  ```provision_infra.yml```
-
-### Jump Server
-
-There is a jumpserver created, simple Ubuntu 14.04, at the end of ```provision_infras.yml```  This then pulls in another git repo of mine ```ansible-guacamole``` to create a HTML5 based terminal server.  See that git repo for more.
-
-If you wanted to rebuild the jumpserver.  Then this would be a good start ```ansible-playbook ./provision_infra.yml --tags=t_jumpsvr```.  It will then delete the jumpserver and re-create it, including the guacamole service.

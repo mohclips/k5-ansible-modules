@@ -9,5 +9,9 @@ git-usage
 a.py
 b.py
 *~
-/roles
-k5_ssh_config
+ansible.cfg
+git-usage
+library
+old
+openrc
+openrc.example
