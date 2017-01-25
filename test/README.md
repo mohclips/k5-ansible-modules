@@ -1,0 +1,1 @@
+To test the module files, you first need to have working K5 credentials (or a similarly configured OpenStack instance). Add those details into the openrc file (there's an example in the ../Examples directory, then source it as follows `. ./openrc` and then run these tests `ansible-playbook <insert name of test file here>`
