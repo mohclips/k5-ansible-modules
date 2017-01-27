@@ -6,26 +6,51 @@ ANSIBLE_METADATA = {'status': ['preview'],
 
 DOCUMENTATION = '''
 ---
-module: k5_network
-short_description: Create network on K5 in particular AZ
+module: k5_create_port
+short_description: Creates a network port to attach to a compute module in an AZ in K5.
 version_added: "1.0"
 description:
-    - Explicit K5 call to create a network in an AZ - replaces os_network from Openstack module, but is more limited. Use os_network to update the network. 
+    - Explicit K5 call to create a network port in an AZ - replaces os_port from Openstack module, but is more limited. Use os_network to update the network.
 options:
    name:
      description:
-        - Name of the network.
+        - Name of the port.
      required: true
      default: None
    state:
      description:
-        - State of the network. Can only be 'present'.
+        - State of the port. Can only be 'present'.
+     required: true
+     default: None
+   subnet_name:
+     description:
+        - Name of the Subnet to attach the port to.
+     required: true
+     default: None
+   network_name:
+     description:
+        - Name of the Network to attach the port to.
      required: true
      default: None
    availability_zone:
      description:
-        - AZ to create the network in.
+        - AZ to create the port in.
      required: true
+     default: None
+   security_groups:
+     description:
+        - The Security Group(s) to apply to the port.
+     required: true
+     default: None
+   fixed_ip:
+     description:
+        - A list of IP addresses to define as 'fixed' (for DHCP purposes or static allocation on the host). If not provided, the DHCP server will offer an IP address instead.
+     required: false
+     default: None
+   allowed_address_pairs:
+     description:
+        - Defined addresses or subnets which are allowed to bypass the OpenStack Anti-spoofing for this one interface. Usually defined as an individual host, a subnet. 0.0.0.0/0 is not permitted (use 0.0.0.0/1 and 128.0.0.1/1 instead)
+     required: false
      default: None
    k5_auth:
      description:
@@ -38,15 +63,29 @@ requirements:
 
 EXAMPLES = '''
 # Create a port in an AZ
-- k5_port:
+- k5_create_port:
         name: "nx-test-port-1a"
         state: present
         availability_zone: "uk-1a"
         network_name: "nx-test-net-1a"
         subnet_name: "nx-test-subnet-1a"
-        fixed_ip: "10.0.0.250"
+        fixed_ip:
+          - "10.0.0.250"
         security_groups:
           - 'default'
+        k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
+
+- k5_create_port:
+        name: "devicename-port-1a"
+        state: present
+        subnet_name: "subnet-1a"
+        network_name: "network-1a"
+        security_groups:
+          - "any any allow"
+        availability_zone: "uk-1a"
+        allowed_address_pairs:
+          - "0.0.0.0/1"
+          - "128.0.0.1/1"
         k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
 '''
 
@@ -56,71 +95,71 @@ k5_port_facts:
     returned: On success when port is created
     type: dictionary
     contains:
-        admin_state_up: 
-            description: 
+        admin_state_up:
+            description:
             type: string
             sample: true
-        allowed_address_pairs: 
-            description: 
+        allowed_address_pairs:
+            description:
             type: string
-            sample: [] 
-        availability_zone: 
-            description: 
+            sample: []
+        availability_zone:
+            description:
             type: string
-            sample: uk-1a 
-        binding:vnic_type: 
-            description: 
+            sample: uk-1a
+        binding:vnic_type:
+            description:
             type: string
-            sample: normal 
-        device_id: 
-            description: 
+            sample: normal
+        device_id:
+            description:
             type: string
             sample: ""
-        device_owner: 
-            description: 
+        device_owner:
+            description:
             type: string
-            sample: "" 
-        fixed_ips: 
-            description: 
+            sample: ""
+        fixed_ips:
+            description:
             type: list of dict
             sample: [
             {
-                ip_address: 
-                    description: 
+                ip_address:
+                    description:
                     type: string
-                    sample: 10.0.0.253 
-                subnet_id: 
-                    description: 
+                    sample: 10.0.0.253
+                subnet_id:
+                    description:
                     type: string
                     sample: 909b6f95-8591-4887-8932-1798c5cd1eec
             }
         ]
-        id: 
-            description: 
+        id:
+            description:
             type: string
             sample: 024078fb-6d95-4405-a466-c5c6e38d143f
-        mac_address: 
-            description: 
+        mac_address:
+            description:
             type: string
             sample: fa:16:3e:fd:98:10
-        name: 
-            description: 
+        name:
+            description:
             type: string
             sample: nx-test-port-1a
-        network_id: 
-            description: 
+        network_id:
+            description:
             type: string
-            sample: 817d6306-c2b6-44be-b70b-ca6f4b35fd05 
-        security_groups: 
-            description: 
+            sample: 817d6306-c2b6-44be-b70b-ca6f4b35fd05
+        security_groups:
+            description:
             type: list
-            sample: [f214d25f-1352-42ee-a797-fa6bf163d6d6 ] 
-        status: 
-            description: 
+            sample: [f214d25f-1352-42ee-a797-fa6bf163d6d6 ]
+        status:
+            description:
             type: string
             sample: DOWN
-        tenant_id: 
-            description: 
+        tenant_id:
+            description:
             type: string
             sample: 9505d1dab17946ea97745d5de30cc8be
 '''
@@ -192,7 +231,7 @@ def k5_get_security_group_ids_from_names(module, k5_facts):
     for n in response.json()['security_groups']:
         sgs[n['name']] = n['id']
 
-    
+
     for sg in security_groups:
         if sg in sgs.keys():
             sg_ids.append( sgs[sg] )
@@ -281,11 +320,11 @@ def k5_get_network_id_from_name(module, k5_facts):
 
 def k5_check_port_exists(module, k5_facts):
     """Check if a port_name already exists"""
-   
+
     endpoint = k5_facts['endpoints']['networking']
     auth_token = k5_facts['auth_token']
     port_name = module.params['name']
- 
+
     session = requests.Session()
 
     headers = {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Auth-Token': auth_token }
@@ -301,7 +340,7 @@ def k5_check_port_exists(module, k5_facts):
     except requests.exceptions.RequestException as e:
         module.fail_json(msg=e)
 
-    # we failed to get data 
+    # we failed to get data
     if response.status_code not in (200,):
         module.fail_json(msg="RESP: HTTP Code:" + str(response.status_code) + " " + str(response.content), debug=k5_debug_out)
 
@@ -317,7 +356,7 @@ def k5_check_port_exists(module, k5_facts):
 
 def k5_create_port(module):
     """Create a port in an AZ on K5"""
-    
+
     global k5_debug
 
     k5_debug_clear()
@@ -325,10 +364,10 @@ def k5_create_port(module):
     if 'K5_DEBUG' in os.environ:
         k5_debug = True
 
-    if 'auth_spec' in module.params['k5_auth']: 
+    if 'auth_spec' in module.params['k5_auth']:
         k5_facts = module.params['k5_auth']
     else:
-        module.fail_json(msg="k5_auth_facts not found, have you run k5_auth?")        
+        module.fail_json(msg="k5_auth_facts not found, have you run k5_auth?")
 
     endpoint = k5_facts['endpoints']['networking']
     auth_token = k5_facts['auth_token']
@@ -338,6 +377,7 @@ def k5_create_port(module):
     network_name = module.params['network_name']
     fixed_ip = module.params['fixed_ip']
     security_groups = module.params['security_groups']
+    allowed_address_pairs = module.params['allowed_address_pairs']
 
     if k5_check_port_exists(module, k5_facts):
         if k5_debug:
@@ -352,7 +392,7 @@ def k5_create_port(module):
             module.exit_json(changed=False, msg="Network " + network_name + " not found", debug=k5_debug_out)
         else:
             module.exit_json(changed=False, msg="Network " + network_name + " not found")
-    
+
     # we need the subnet_id not subnet_name, so grab it
     subnet_id = k5_get_subnet_id_from_name(module, k5_facts)
     if subnet_id == '':
@@ -365,10 +405,10 @@ def k5_create_port(module):
     sec_grp_list = k5_get_security_group_ids_from_names(module, k5_facts)
 
     az = module.params['availability_zone']
-    
+
     # actually the project_id, but stated as tenant_id in the API
     #tenant_id = k5_facts['auth_spec']['os_project_id']
-    
+
     k5_debug_add('auth_token: {0}'.format(auth_token))
     k5_debug_add('port_name: {0}'.format(port_name))
     k5_debug_add('subnet_name: {0} {1}'.format(subnet_name, subnet_id))
@@ -376,6 +416,7 @@ def k5_create_port(module):
     k5_debug_add('fixed_ip: {0}'.format(fixed_ip))
     k5_debug_add('security_groups: {0}'.format(security_groups))
     k5_debug_add('az: {0}'.format(az))
+    k5_debug_add('allowed_address_pairs: {0}'.format(allowed_address_pairs))
 
     session = requests.Session()
 
@@ -383,16 +424,24 @@ def k5_create_port(module):
 
     url = endpoint + '/v2.0/ports'
 
-    query_json = {"port":{
-        "network_id": network_id, 
-        "name": port_name, 
-        "availability_zone":az, 
-        "fixed_ips": [{
-            "subnet_id": subnet_id, 
-            "ip_address": fixed_ip
-        }],
-        "security_groups": sec_grp_list
-    }}
+    port_config = {
+        "network_id": network_id,
+        "name": port_name,
+        "availability_zone":az,
+        "security_groups": sec_grp_list,
+    }
+
+    if allowed_address_pairs != '' and allowed_address_pairs != None:
+        port_config["allowed_address_pairs"] = allowed_address_pairs
+
+    if fixed_ip != None and fixed_ip != '':
+        port_config["fixed_ips"] = []
+        for ip_address in fixed_ip:
+            port_config["fixed_ips"].append({"subnet_id": subnet_id, "ip_address": ip_address})
+    else:
+        port_config["fixed_ips"] = [{"subnet_id": subnet_id}]
+
+    query_json = {"port":port_config}
 
     k5_debug_add('endpoint: {0}'.format(endpoint))
     k5_debug_add('REQ: {0}'.format(url))
@@ -407,7 +456,7 @@ def k5_create_port(module):
     # we failed to make a change
     if response.status_code not in (201,):
         module.fail_json(msg="RESP: HTTP Code:" + str(response.status_code) + " " + str(response.content), debug=k5_debug_out)
-    
+
     k5_debug_add('response json: {0}'.format(response.json()))
 
     if k5_debug:
@@ -425,21 +474,22 @@ def main():
         state = dict(required=True, type='str'), # should be a choice
         subnet_name = dict(required=True, default=None, type='str'),
         network_name = dict(required=True, default=None, type='str'),
-        fixed_ip = dict(required=True, default=None, type='str'),
+        fixed_ip = dict(required=False, default=None, type='list'),
         security_groups = dict(required=True, default=None, type='list'),
         availability_zone = dict(required=True, default=None, type='str'),
+        allowed_address_pairs = dict(required=False, default=None, type='list'),
         k5_auth = dict(required=True, default=None, type='dict')
     ) )
 
     if module.params['state'] == 'present':
         k5_create_port(module)
     else:
-       module.fail_json(msg="No 'absent' function in this module, use os_port module instead") 
+       module.fail_json(msg="No 'absent' function in this module, use os_port module instead")
 
 
 ######################################################################################
 
-if __name__ == '__main__':  
+if __name__ == '__main__':
     main()
 
 
