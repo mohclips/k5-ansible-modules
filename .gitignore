@@ -9,9 +9,7 @@ git-usage
 a.py
 b.py
 *~
-ansible.cfg
 git-usage
 library
 old
 openrc
-openrc.example
