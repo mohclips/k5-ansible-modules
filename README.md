@@ -95,8 +95,10 @@ Or use the parameters in ```k5_auth```.
 
 # Contributors
 
-*Nicholas Cross
-*Jon Spriggs
-*Kenny Brown
+Many thanks to the following people:
+
+* Nicholas Cross
+* Jon Spriggs
+* Kenny Brown
 
 
