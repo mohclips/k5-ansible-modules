@@ -55,9 +55,7 @@ Return the openstack console logs for a defined server, the builds logs or somet
 
 ### k5_novnc_console
 
-Return the URL to a noVNC console for a defined server.  These URLs are time limited (for security purposes?).  
-
-Also only works in Japan East-1 at present while the update is rolled out across the various regions. (Jan2017) 
+Return the URL to a noVNC console for a defined server.  These URLs are time limited (for security purposes).  
 
 ### k5_inter_project_link
 
