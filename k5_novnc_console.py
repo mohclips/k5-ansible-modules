@@ -147,7 +147,7 @@ def k5_get_novnc_console(module):
 
     url = endpoint + '/servers/' + server_id + '/action'
 
-    query_json = { 'osgetVNCConsole': {'type': 'novnc' }}
+    query_json = { 'os-getVNCConsole': {'type': 'novnc' }}
 
     k5_debug_add('endpoint: {0}'.format(endpoint))
     k5_debug_add('REQ: {0}'.format(url))
@@ -160,13 +160,13 @@ def k5_get_novnc_console(module):
         module.fail_json(msg=e)
 
     # we failed to make a change
-    if response.status_code not in (201,):
+    if response.status_code not in (200,):
         module.fail_json(msg="RESP: HTTP Code:" + str(response.status_code) + " " + str(response.content), debug=k5_debug_out)
 
     if k5_debug:
-        module.exit_json(changed=True, msg="Get URL Successful", k5_router_facts=response.json(), debug=k5_debug_out )
+        module.exit_json(changed=True, msg="Get URL Successful", k5_novnc_console_facts=response.json(), debug=k5_debug_out )
 
-    module.exit_json(changed=True, msg="Get URL Successful", k5_router_facts=response.json() )
+    module.exit_json(changed=True, msg="Get URL Successful", k5_novnc_console_facts=response.json() )
 
 
 ######################################################################################
