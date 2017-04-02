@@ -67,7 +67,9 @@ Link two projects (virtual routers) together.  Developed by Kenny Brown.
 
 Update routes on a virtual router.  Developed by Kenny Brown.
 
+### k5_update_router_add_port
 
+Add previously created port to router.  Allows adding a fixed IP to a router.
 
 ## Online API Guides
 
