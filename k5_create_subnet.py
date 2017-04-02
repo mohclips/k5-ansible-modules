@@ -269,7 +269,7 @@ def k5_create_subnet(module):
     network_name = module.params['network_name']
     cidr = module.params['cidr']
     dns = module.params['dns']
-    gateway_ip = module.params['gateway_ip']
+    gateway_ip = module.params['gateway_ip'] # optional
     enable_dhcp = module.params['enable_dhcp']
     dhcp_pool_start = module.params['dhcp_pool_start']
     dhcp_pool_end = module.params['dhcp_pool_end']
@@ -288,7 +288,6 @@ def k5_create_subnet(module):
         else:
             module.exit_json(changed=False, msg="Network " + network_name + " not found")
     
-
     az = module.params['availability_zone']
     
     # actually the project_id, but stated as tenant_id in the API
@@ -318,7 +317,7 @@ def k5_create_subnet(module):
             "cidr": cidr, 
             "dns_nameservers": dns, 
             "ip_version": 4, 
-            "gateway_ip": gateway_ip, 
+#            "gateway_ip": gateway_ip, 
             "availability_zone": az,
             "enable_dhcp": enable_dhcp
             }}
@@ -329,7 +328,7 @@ def k5_create_subnet(module):
             "cidr": cidr, 
             "dns_nameservers": dns, 
             "ip_version": 4, 
-            "gateway_ip": gateway_ip, 
+#            "gateway_ip": gateway_ip, 
             "availability_zone": az, 
             "enable_dhcp": enable_dhcp,
             "allocation_pools": [
@@ -339,6 +338,12 @@ def k5_create_subnet(module):
                 }
             ]
             }}
+
+    # add gateway if defined - issue #5
+    if gateway_ip is not None:
+        k5_debug_add('adding gateway_ip: {0}'.format(gateway_ip))
+        query_json.update({"gateway_ip": gateway_ip})
+
 
     k5_debug_add('endpoint: {0}'.format(endpoint))
     k5_debug_add('REQ: {0}'.format(url))
@@ -372,7 +377,7 @@ def main():
         cidr = dict(required=True, default=None, type='str'),
         network_name = dict(required=True, default=None, type='str'),
         dns = dict(required=False, default=None, type='list'),
-        gateway_ip = dict(required=True, default=None, type='str'),
+        gateway_ip = dict(required=False, default=None, type='str'),
         availability_zone = dict(required=True, default=None, type='str'),
         enable_dhcp = dict(required=False, default=True, type='str'),
         dhcp_pool_start = dict(required=False, default=None, type='str'),
