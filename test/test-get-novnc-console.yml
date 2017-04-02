@@ -1,0 +1,26 @@
+# vim: noai:ts=2:sw=2:et
+---
+
+- name: "get NOVNC console url"
+
+  gather_facts: no
+
+  hosts: all
+
+  vars:
+
+  tasks:
+
+    - k5_auth:
+      register: k5_auth_reg
+      delegate_to: 127.0.0.1
+
+    - k5_novnc_console:
+        server_name: "{{ inventory_hostname }}"
+        k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
+      register: console
+      delegate_to: 127.0.0.1
+     
+
+    - debug: var=console.k5_novnc_console_facts.console.url
+
