@@ -38,7 +38,7 @@ requirements:
 
 EXAMPLES = '''
 # Set routes on K5 router
-- k5_create_inter_project_link:
+- k5_update_router_routes:
         state: present
         routes: 
           - "172.16.1.1","10.10.10.0/24"
@@ -211,6 +211,3 @@ def main():
 
 if __name__ == '__main__':  
     main()
-
-
-
