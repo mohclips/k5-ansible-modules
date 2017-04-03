@@ -6,11 +6,11 @@ ANSIBLE_METADATA = {'status': ['preview'],
 
 DOCUMENTATION = '''
 ---
-module: k5_update_router_routes
-short_description: Replaces the existing routes on a K5 router
+module: k5_update_router_add_port
+short_description: Add ports to a K5 router
 version_added: "1.0"
 description:
-    - K5 call to update the route on a router - option is not available in the Openstack module. 
+    - K5 call to add ports to a router
 options:
    router_name:
      description:
@@ -22,9 +22,9 @@ options:
         - State of the network. Can only be 'present'.
      required: true
      default: None
-   routes:
+   ports:
      description:
-       - routes to be applied to the router.
+       - list of ports to be added to the router.
      required: true
      default: None
    k5_auth:
@@ -37,12 +37,12 @@ requirements:
 '''
 
 EXAMPLES = '''
-# Set routes on K5 router
-- k5_create_inter_project_link:
+# Add ports to a K5 router
+- k5_update_router_add_port:
         state: present
-        routes: 
-          - "172.16.1.1","10.10.10.0/24"
-          - "172.16.1.1","10.10.20.0/24"
+        ports: 
+          - "myport_a"
+          - "myport_b"
         router_name: "nx-test-net-1a"
         k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
 '''
