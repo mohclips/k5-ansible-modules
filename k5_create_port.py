@@ -380,7 +380,7 @@ def k5_create_port(module):
     allowed_address_pairs = module.params['allowed_address_pairs']
 
     check_port = k5_check_port_exists(module, k5_facts)
-    if 'id' in check_port:
+    if check_port and 'id' in check_port:
         if k5_debug:
             module.exit_json(changed=False, msg="Port " + port_name + " already exists", k5_port_facts=check_port, debug=k5_debug_out)
         else:
