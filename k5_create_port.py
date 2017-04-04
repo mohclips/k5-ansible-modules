@@ -350,7 +350,7 @@ def k5_check_port_exists(module, k5_facts):
         #k5_debug_add("Found port name: " + str(n['name']))
         if str(n['name']) == port_name:
             #k5_debug_add("Found it!")
-            return True
+            return n
 
     return False
 
@@ -379,11 +379,12 @@ def k5_create_port(module):
     security_groups = module.params['security_groups']
     allowed_address_pairs = module.params['allowed_address_pairs']
 
-    if k5_check_port_exists(module, k5_facts):
+    check_port = k5_check_port_exists(module, k5_facts)
+    if 'id' in check_port:
         if k5_debug:
-            module.exit_json(changed=False, msg="Port " + port_name + " already exists", debug=k5_debug_out)
+            module.exit_json(changed=False, msg="Port " + port_name + " already exists", k5_port_facts=check_port, debug=k5_debug_out)
         else:
-            module.exit_json(changed=False, msg="Port " + port_name + " already exists")
+            module.exit_json(changed=False, msg="Port " + port_name + " already exists", k5_port_facts=check_port)
 
     # we need the network_id not network_name, so grab it
     network_id = k5_get_network_id_from_name(module, k5_facts)
