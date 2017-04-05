@@ -154,6 +154,13 @@ def k5_create_inter_project_link(module):
             module.exit_json(changed=False, msg="Router " + router_name + " not found")
 
 
+    if router_id == k5_port['device_id']:
+        module.exit_json(changed=False, msg="Port already connected to the correct router")
+    elif k5_port['device_id'] != '':
+        if k5_debug:
+            module.fail_json(changed=False, msg="Port already attached to " + k5_port['device_id'], debug=k5_debug_out)
+        else:
+            module.fail_json(changed=False, msg="Port already attached to " + k5_port['device_id'])
 
     # actually the project_id, but stated as tenant_id in the API
     tenant_id = k5_facts['auth_spec']['os_project_id']
