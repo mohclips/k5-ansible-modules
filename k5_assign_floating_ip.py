@@ -335,6 +335,160 @@ def k5_create_floating_ip(module):
 
     module.exit_json(changed=True, msg="Floating IP Allocation Successful", k5_floating_ip_facts=response.json()['floatingip'] )
 
+def k5_list_floating_ips(module,k5_facts):
+    """list floating ips available"""
+
+    endpoint = k5_facts['endpoints']['networking']
+    auth_token = k5_facts['auth_token']
+
+    session = requests.Session()
+
+    headers = {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Auth-Token': auth_token }
+
+    url = endpoint + '/v2.0/floatingips'
+
+    k5_debug_add('endpoint: {0}'.format(endpoint))
+    k5_debug_add('REQ: {0}'.format(url))
+    k5_debug_add('headers: {0}'.format(headers))
+
+    try:
+        response = session.request('GET', url, headers=headers)
+    except requests.exceptions.RequestException as e:
+        module.fail_json(msg=e)
+
+    # we failed to get data
+    if response.status_code not in (200,):
+        module.fail_json(msg="RESP: HTTP Code:" + str(response.status_code) + " " + str(response.content), debug=k5_debug_out)
+
+    return response.json()['floatingips']
+
+
+def k5_assign_floating_ip(module):
+    """Attach an already existsing floating IP to a server on K5"""
+    
+    global k5_debug
+
+    k5_debug_clear()
+
+    if 'K5_DEBUG' in os.environ:
+        k5_debug = True
+
+    if 'auth_spec' in module.params['k5_auth']: 
+        k5_facts = module.params['k5_auth']
+    else:
+        module.fail_json(msg="k5_auth_facts not found, have you run k5_auth?")        
+
+    endpoint = k5_facts['endpoints']['networking']
+    auth_token = k5_facts['auth_token']
+
+    server_name = module.params['server']
+    fixed_ip = module.params['fixed_ip']
+    ext_net = module.params['ext_network']
+    floating_ip = module.params['floating_ip']
+
+    # we need the server_id not server_name, so grab it
+    server_facts = k5_get_server_facts(module, k5_facts)
+
+    az = ''
+    server_id = ''
+    for s in server_facts['servers']:
+        if s['name'] == server_name:
+            server_id = s['id']
+            az = s['OS-EXT-AZ:availability_zone']
+            # check if that server has a floating IP already assigned - maybe people want two floaing IPs, but we arent allowing that here
+            for subnets in s['addresses']:
+                for subnet in s['addresses'][subnets]:
+                    if subnet['OS-EXT-IPS:type'] == 'floating':
+                        module.exit_json(changed=False, msg="Floating IP " + subnet['addr'] + " already assigned")
+
+            break
+
+    if server_id == '':
+      if k5_debug:
+          module.exit_json(changed=False, msg="Server " + server_name + " not found", debug=k5_debug_out)
+      else:
+          module.exit_json(changed=False, msg="Server " + server_name + " not found")
+
+    
+    #
+    # check floatingip exists
+    #
+    floating_ip_portid = None
+    floating_ips = k5_list_floating_ips(module,k5_facts)
+    k5_debug_add(floating_ips)
+
+    for fip in floating_ips:
+        if fip['floating_ip_address'] == floating_ip:
+            floating_ip_portid = fip['id']
+
+    if floating_ip_portid == None:
+        if k5_debug:
+          module.exit_json(changed=False, msg="Floating IP " + floating_ip + " not found", debug=k5_debug_out)
+        else:
+          module.exit_json(changed=False, msg="Floating IP " + floating_ip + " not found")
+
+
+    #
+    # get port facts on internal fixed_ip on server
+    #
+    port_facts = k5_get_port_facts(module, k5_facts, server_id)
+
+    k5_debug_add(port_facts)
+
+    try:
+      # attach to port that matches our fixed IP
+      for port in port_facts['interfaceAttachments']:
+        # can we safely assume that ports only have one fixed ip assigned to them?
+        if port['fixed_ips'][0]['ip_address'] == fixed_ip:
+            fixed_ip_port_id = port['port_id']
+            #network_id = port['net_id'] # wrong net id, needs to be external
+    except:
+      # is there any need for this?  surely a port always exists?    
+      if k5_debug:
+          module.exit_json(changed=False, msg="Port on " + server_name + " not found", debug=k5_debug_out)
+      else:
+          module.exit_json(changed=False, msg="Port on " + server_name + " not found")
+
+    k5_debug_add('auth_token: ' + str(auth_token))
+    k5_debug_add('server_name: '+ str(server_name))
+    k5_debug_add('fixed_ip: '+str(fixed_ip))
+    k5_debug_add('fixed_ip_port_id: '+str(fixed_ip_port_id))
+    k5_debug_add('floating_ip: '+str(floating_ip))
+    k5_debug_add('floating_ip_portid: '+str(floating_ip_portid))
+    k5_debug_add('az: '+str(az))
+
+    session = requests.Session()
+
+    headers = {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Auth-Token': auth_token }
+
+    url = endpoint + '/v2.0/floatingips/'+floating_ip_portid
+
+    query_json = {"floatingip": {
+            "port_id": fixed_ip_port_id, 
+            }
+        }
+
+    k5_debug_add('endpoint: {0}'.format(endpoint))
+    k5_debug_add('REQ: {0}'.format(url))
+    k5_debug_add('headers: {0}'.format(headers))
+    k5_debug_add('json: {0}'.format(query_json))
+
+    try:
+        response = session.request('PUT', url, headers=headers, json=query_json)
+    except requests.exceptions.RequestException as e:
+        module.fail_json(msg=e)
+
+    # we failed to make a change
+    if response.status_code not in (200,):
+        module.fail_json(msg="RESP: HTTP Code:" + str(response.status_code) + " " + str(response.content), debug=k5_debug_out)
+    
+    k5_debug_add('response json: {0}'.format(response.json()))
+
+    if k5_debug:
+      module.exit_json(changed=True, msg="Floating IP Allocation Successful", k5_floating_ip_facts=response.json()['floatingip'], debug=k5_debug_out )
+
+    module.exit_json(changed=True, msg="Floating IP Allocation Successful", k5_floating_ip_facts=response.json()['floatingip'] )
+
 
 ######################################################################################
 
@@ -342,12 +496,21 @@ def main():
 
     module = AnsibleModule( argument_spec=dict(
         server = dict(required=True, default=None, type='str'),
+
         fixed_ip = dict(required=True, default=None, type='str'),
         ext_network = dict(required=True, default=None, type='str'),
+
+        floating_ip = dict(required=False, default=None, type='str'),
+
         k5_auth = dict(required=True, default=None, type='dict')
     ) )
+    # TODO: we may want to use ports here to assign to routers and other devices in the future
 
-    k5_create_floating_ip(module)
+
+    if 'floating_ip' in module.params:
+        k5_assign_floating_ip(module) # assign an already created floating/public ip to a port
+    else:
+        k5_create_floating_ip(module) # originally we wanted to just create one from the DHCP range without pre-creating it
 
 
 ######################################################################################
