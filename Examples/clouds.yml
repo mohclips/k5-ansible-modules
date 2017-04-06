@@ -1,0 +1,36 @@
+---
+# Note many of these details are stored in secure.yml as per
+# https://docs.openstack.org/developer/os-client-config/
+# The name of the cloud must match in secure.y(a)ml
+
+clouds:
+  k5_project_a:
+    identity_api_version: 3
+    auth:
+      auth_url: https://identity.uk-1.cloud.global.fujitsu.com/v3
+
+    # If you use multiple regions, list them here. If you don't specify which
+    # region to use when you specify which cloud to use, for example:
+    #
+    # ANSIBLE PLAYBOOK EXAMPLE
+    # - k5_auth:
+    #     cloud: k5_project_a
+    #     region: uk-1            # IF YOU OMIT THIS
+    # openstack --os-cloud k5_project_a --os-region de-1 server list
+    #
+    # then it will use the first region specified here.
+
+    regions:
+      - uk-1
+      - de-1
+      - fi-1
+      - jp-east-1
+      - jp-west-1
+      - jp-west-2
+
+  k5_project_b:
+    identity_api_version: 3
+    # Alternatively, if you only ever use a single region, use this format:
+    region_name: uk-1
+    auth:
+      auth_url: https://identity.uk-1.cloud.global.fujitsu.com/v3

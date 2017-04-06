@@ -110,6 +110,7 @@ import requests
 import os
 import json
 from ansible.module_utils.basic import *
+import os_client_config
 
 #useful items to use later in other modules
 k5_auth_spec = dict(
@@ -206,15 +207,49 @@ def k5_get_auth_spec(module):
     if 'K5_DEBUG' in os.environ:
         k5_debug = True
 
-    OS_USERNAME = os.environ.get('OS_USERNAME', None)
-    OS_PASSWORD = os.environ.get('OS_PASSWORD', None)
-    OS_REGION_NAME = os.environ.get('OS_REGION_NAME', None)
-    OS_PROJECT_ID = os.environ.get('OS_PROJECT_ID', None)
-    OS_USER_DOMAIN_NAME = os.environ.get('OS_USER_DOMAIN_NAME', None)
-
-    # now overwrite the vars if provided within the playbook module
-
     mp = module.params
+
+    cloud_configured = False
+    
+    if 'cloud' in mp and mp['cloud'] and 'region_name' in mp and mp['region_name']:
+        cloud_config = os_client_config.OpenStackConfig().get_one_cloud(mp['cloud'], region_name=mp['region_name'])
+        cloud_configured = True
+    elif 'cloud' in mp and mp['cloud']:
+        cloud_config = os_client_config.OpenStackConfig().get_one_cloud(mp['cloud'])
+        cloud_configured = True
+    else:
+        all_cloud_config = os_client_config.OpenStackConfig().get_all_clouds()
+        cloud_names = ""
+        cloud_counter = 0
+        for cloud in all_cloud_config:
+            if cloud.name == "envvars":
+                cloud_config = os_client_config.OpenStackConfig().get_one_cloud('envvars')
+                cloud_configured = True
+
+            cloud_counter = cloud_counter + 1
+
+            if cloud_names != "":
+                cloud_names = cloud_names + ", "
+
+            cloud_names = cloud_names + "'cloud=" + cloud.name + " region=" + cloud.region +"'"
+
+        if cloud_configured == False:
+            if k5_debug:
+                module.fail_json(msg='Please select a cloud/region pair from ' + cloud_names, k5_debug=k5_debug_out)
+            else:
+                module.fail_json(msg='Please select a cloud/region pair from ' + cloud_names)
+
+    k5_debug_add(cloud_config.config)
+
+    # finish here! Debug begins!
+
+    OS_USERNAME = cloud_config.auth['username']
+    OS_PASSWORD = cloud_config.auth['password']
+    OS_REGION_NAME = cloud_config.region
+    OS_PROJECT_ID = cloud_config.auth['project_id']
+    OS_USER_DOMAIN_NAME = cloud_config.auth['user_domain_name']
+    
+    # now overwrite the vars if provided within the playbook module
 
     if 'username' in mp and mp['username']:
         k5_auth_spec['os_username'] = mp['username']
@@ -331,7 +366,8 @@ def main():
         password = dict(required=False, default=None, type='str'),
         user_domain = dict(required=False, default=None, type='str'), 
         project_id = dict(required=False, default=None, type='str'),
-        region_name = dict(required=False, default=None, type='str') 
+        region_name = dict(required=False, default=None, type='str'),
+        cloud = dict(required=False, default=None, type='str')
     ) )
 
     k5_get_auth_token(module)

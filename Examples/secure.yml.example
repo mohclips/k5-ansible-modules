@@ -1,0 +1,35 @@
+---
+clouds:
+  k5_project_a:
+    # Go to the "Manage" -> "Project" page it will bring up an
+    # error message. Click through to see the details
+    # and this is where the domain ID is... or just ask the PMO
+    default_domain: decafbaddecafbad1234567890badbad
+    auth:
+      # Get this from the "API Access" tab on the "Access and
+      # Security" page. It's the suffix of many of the API
+      # endpoints - e.g. orchestration, blockstorage
+      project_id: decafbaddecafbad1234567890badbad
+      # This is the name of the project you're applying this
+      # against
+      project_name: project_a
+      # These are the "Real" credentials you've been supplied
+      # from the PMO
+      username: bloggsf
+      # This is the password you've received from K5. Note, you
+      # will have to change this each time you change your K5
+      # password!
+      password: decafbaddecafbad1234567890badbad
+      # This is the name of the "Contract" you log into.
+      user_domain_name: contract_number
+
+  k5_project_b:
+    # As far as I can see right now, you need to repeat this
+    # each project.
+    default_domain: decafbaddecafbad1234567890badbad
+    auth:
+      password: decafbaddecafbad1234567890badbad
+      project_id: decafbaddecafbad1234567890badbad
+      project_name: project_b
+      username: bloggsf
+      user_domain_name: contract_number
