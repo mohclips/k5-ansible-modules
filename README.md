@@ -93,6 +93,9 @@ Or use the parameters in ```k5_auth```.
  export OS_USER_DOMAIN_NAME=contract id
 ```
 
+### clouds.y(a)ml / secure.y(a)ml
+See the example files in Examples/clouds.yml and Examples/secure.yml.example
+
 # Contributors
 
 Many thanks to the following people:
