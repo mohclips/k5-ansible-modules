@@ -65,9 +65,34 @@ Link two projects (virtual routers) together.  Developed by Kenny Brown.
 
 Update routes on a virtual router.  Developed by Kenny Brown.
 
-### k5_update_router_add_port
+### k5_update_router_ports
 
-Add previously created port to router.  Allows adding a fixed IP to a router.
+Add previously created port to router.  Allows adding a fixed IP to a router. Delete a port from a router.
+
+### k5_assign_floating_ip
+
+Assign/Allocate or release/unallocate a floating IP on a server or router.
+
+### k5_key_list
+
+List the secret keys - the certs, pem file contents on K5 for the SSL VPNs
+
+### k5_key_container_list
+
+List the containers for the secret keys for the SSL VPNs
+
+### k5_ssl_vpn_list
+
+List the SSL VPNs
+
+### k5_router_create_ssl_vpn
+
+Create a SSL VPN
+
+### k5_ssl_vpn_delete
+
+Delete a SSL VPN
+
 
 ## Online API Guides
 
