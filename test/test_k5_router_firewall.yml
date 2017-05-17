@@ -1,0 +1,36 @@
+# vim: noai:ts=2:sw=2:et
+---
+
+- name: "test FWaaS"
+
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars:
+
+    K5_DEBUG: "{{ lookup('env','K5_DEBUG')|default(False) }}"
+
+    rules:
+        - { name: "Env_RDP_EAIT", action: "allow", protocol: "tcp", destination_ip_address: "10.183.163.71/32", destination_port: "3389" }
+        - { name: "Env_SSH_EAIT", action: "allow", protocol: "tcp", destination_ip_address: "10.183.163.71/32", destination_port: "22" }
+        - { name: "Env_https_EAIT", action: "allow", protocol: "tcp", destination_ip_address: "10.183.163.71/32", destination_port: "443" }
+        - { name: "Env_https_EAITnx", action: "allow", protocol: "tcp", destination_ip_address: "10.183.163.71/32", destination_port: "4433" }
+        - { name: "Env_IDM-01_EAIT", action: "allow", protocol: "tcp", source_ip_address: "62.60.38.36/32", destination_ip_address: "10.183.163.71/32", destination_port: "8080" }
+        - { name: "Env_IDM-02_EAIT", action: "allow", protocol: "tcp", source_ip_address: "213.138.139.130/31", destination_ip_address: "10.183.163.71/32", destination_port: "8080" } 
+        - { name: "Env_Deny_Any", action: "deny" }
+
+  tasks:
+
+    - name: "Authenticate to K5"
+      # use openrc environment variables
+      k5_auth:
+      register: k5_auth_reg
+      run_once: yes
+
+    - k5_router_firewall:
+        router_name: "nxfw-ext-rtr-ssl-uk-1b"
+        state: present
+        rules: "{{ rules }}"
+        reset_connections: True
+        k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"   

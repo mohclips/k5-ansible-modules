@@ -1,0 +1,23 @@
+# vim: noai:ts=2:sw=2:et
+---
+
+- name: "test FWaaS"
+
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars:
+
+  tasks:
+
+    - name: "Authenticate to K5"
+      # use openrc environment variables
+      k5_auth:
+      register: k5_auth_reg
+      run_once: yes
+
+    - k5_router_firewall:
+        router_name: "nxfw-ext-rtr-ssl-uk-1b"
+        state: absent
+        k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"   
