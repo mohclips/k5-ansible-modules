@@ -151,7 +151,12 @@ def k5_update_router_routes(module):
             module.exit_json(changed=False, msg="Router " + router_name + " not found")
 
     # To add multiple routes we need to convert the variable from a list to a Dictionary
-    routes_dict = [{'nexthop': route.split(',')[0], 'destination': route.split(',')[1]} for route in routes]
+    #routes_dict = [{'nexthop': route.split(',')[0], 'destination': route.split(',')[1]} for route in routes]
+    # if we define the yaml correctly we can skip the above
+    routes_dict = routes
+
+    if module.params['state'] is 'absent':
+        route_dict = {}
 
     # actually the project_id, but stated as tenant_id in the API
     tenant_id = k5_facts['auth_spec']['os_project_id']
@@ -196,15 +201,12 @@ def main():
 
     module = AnsibleModule( argument_spec=dict(
         router_name = dict(required=True, default=None, type='str'),
-        state = dict(required=True, type='str'), # should be a choice
-        routes = dict(required=True, default=None, type='list'),
+        state = dict(default='present', choices=['present', 'absent'])
+        routes = dict(required=False, default=[], type='list'),
         k5_auth = dict(required=True, default=None, type='dict')
     ) )
 
-    if module.params['state'] == 'present':
-        k5_update_router_routes(module)
-    else:
-       module.fail_json(msg="No 'absent' function in this module, use os_port module instead") 
+    k5_update_router_routes(module)
 
 
 ######################################################################################
