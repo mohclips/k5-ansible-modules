@@ -105,7 +105,7 @@ def k5_key_list(module):
 
     headers = {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Auth-Token': auth_token }
 
-    url = endpoint + '/' + tenant_id + '/secrets'
+    url = endpoint + '/' + tenant_id + '/secrets?limit=1000'  # TODO limit + offset
 
     k5_debug_add('endpoint: {0}'.format(endpoint))
     k5_debug_add('REQ: {0}'.format(url))
