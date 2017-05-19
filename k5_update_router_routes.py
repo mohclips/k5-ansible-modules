@@ -201,7 +201,7 @@ def main():
 
     module = AnsibleModule( argument_spec=dict(
         router_name = dict(required=True, default=None, type='str'),
-        state = dict(default='present', choices=['present', 'absent'])
+        state = dict(default='present', choices=['present', 'absent']),
         routes = dict(required=False, default=[], type='list'),
         k5_auth = dict(required=True, default=None, type='dict')
     ) )
