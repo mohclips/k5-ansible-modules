@@ -318,12 +318,12 @@ def main():
         k5_auth = dict(required=True, default=None, type='dict')
     ) )
 
-    if module.params['state'] == 'present':
+    if ( (module.params['state'] == 'present') and (module.params['ports'] is not None) ):
         k5_update_router_add_ports(module)
     elif module.params['state'] == 'absent':
         k5_update_router_remove_ports(module)
     else:
-        module.fail_json(msg="Unknown command")
+        module.fail_json(msg="Unknown command or ports missing")
 
 
 ######################################################################################
