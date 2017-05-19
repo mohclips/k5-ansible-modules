@@ -584,9 +584,9 @@ def k5_assign_floating_ip_to_port(module):
 
     if floating_ip_portid == None:
         if k5_debug:
-          module.exit_json(changed=False, msg="Floating IP " + floating_ip + " not found", debug=k5_debug_out)
+          module.exit_json(changed=False, msg="Floating IP " + str(floating_ip) + " not found", debug=k5_debug_out)
         else:
-          module.exit_json(changed=False, msg="Floating IP " + floating_ip + " not found")
+          module.exit_json(changed=False, msg="Floating IP " + str(floating_ip) + " not found")
 
 
     k5_debug_add('auth_token: ' + str(auth_token))
@@ -742,9 +742,14 @@ def main():
          [ 'port', 'fixed_ip' ]
         ],
 
-        required_together=[
-         [ 'server', 'fixed_ip', 'ext_network' ],
-         [ 'port', 'floating_ip' ]
+# TODO this is broken - it keeps asking for server, fixed_ip, ext_network and ignores port...
+#        required_together=[
+#         [ 'server', 'fixed_ip', 'ext_network' ],
+#         [ 'port', 'floating_ip', 'ext_network' ],
+#        ],
+    
+        required_one_of=[
+         [ 'server', 'port']
         ]
     )
 
