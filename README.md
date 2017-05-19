@@ -93,6 +93,17 @@ Create a SSL VPN
 
 Delete a SSL VPN
 
+###k5_key_container_delete
+
+Delete the containers the secrets reside in
+
+###k5_key_delete
+
+Delete the secrets
+
+### k5_router_firewall
+
+Add, Update, Remove a firewall instance on a K5 router
 
 ## Online API Guides
 
