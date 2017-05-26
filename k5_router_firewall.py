@@ -107,7 +107,8 @@ def k5_api(module,action,url,query_json):
     #k5_debug_add('headers: {0}'.format(headers)) # not needed in debug
 
     if query_json is not None: 
-        k5_debug_add('json: {0}'.format(query_json))
+        k5_debug_add('json:')
+        k5_debug_add(query_json)    
 
     session = requests.Session()
     try:
