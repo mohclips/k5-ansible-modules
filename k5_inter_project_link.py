@@ -165,7 +165,6 @@ def k5_create_inter_project_link(module):
     # actually the project_id, but stated as tenant_id in the API
     tenant_id = k5_facts['auth_spec']['os_project_id']
     
-    k5_debug_add('auth_token: {0}'.format(auth_token))
     k5_debug_add('router_name: {0}'.format(router_name))
     k5_debug_add('port_id: {0}'.format(port_id))
 
@@ -177,7 +176,6 @@ def k5_create_inter_project_link(module):
 
     query_json = { "port_id": port_id }
 
-    k5_debug_add('endpoint: {0}'.format(endpoint))
     k5_debug_add('REQ: {0}'.format(url))
     k5_debug_add('headers: {0}'.format(headers))
     k5_debug_add('json: {0}'.format(query_json))
@@ -210,12 +208,18 @@ def k5_delete_inter_project_link(module):
         k5_facts = module.params['k5_auth']
     else:
         module.fail_json(msg="k5_auth_facts not found, have you run k5_auth?") 
-        
+
+    if 'id' in module.params['k5_port']: 
+        k5_port = module.params['k5_port']
+        port_id = k5_port['id']
+    elif 'id' in module.params:
+        port_id = module.params['port_id']
+    else:
+        module.fail_json(msg="port_id or k5_port not supplied")
+
     endpoint = k5_facts['endpoints']['networking-ex']
     auth_token = k5_facts['auth_token']
-    port_id = module.params['port_id']
     router_name = module.params['router_name']
-
    
     # we need the router_id not router_name, so grab it
     router_id = k5_get_router_id_from_name(module, k5_facts)
@@ -225,12 +229,9 @@ def k5_delete_inter_project_link(module):
         else:
             module.exit_json(changed=False, msg="Router " + router_name + " not found")
 
-
-
     # actually the project_id, but stated as tenant_id in the API
     tenant_id = k5_facts['auth_spec']['os_project_id']
     
-    k5_debug_add('auth_token: {0}'.format(auth_token))
     k5_debug_add('router_name: {0}'.format(router_name))
     k5_debug_add('port_id: {0}'.format(port_id))
 
@@ -242,7 +243,6 @@ def k5_delete_inter_project_link(module):
 
     query_json = { "port_id": port_id }
 
-    k5_debug_add('endpoint: {0}'.format(endpoint))
     k5_debug_add('REQ: {0}'.format(url))
     k5_debug_add('headers: {0}'.format(headers))
     k5_debug_add('json: {0}'.format(query_json))
@@ -254,6 +254,12 @@ def k5_delete_inter_project_link(module):
 
     # we failed to make a change
     if response.status_code not in (200,):
+        if "does not have an interface with id" in response.content:
+            if k5_debug:
+                module.exit_json(changed=False, msg="Inter-project Link did not exist", debug=k5_debug_out)
+
+            module.exit_json(changed=False, msg="Inter-project Link did not exist")
+
         module.fail_json(msg="RESP: HTTP Code:" + str(response.status_code) + " " + str(response.content), debug=k5_debug_out)
 
     if k5_debug:
