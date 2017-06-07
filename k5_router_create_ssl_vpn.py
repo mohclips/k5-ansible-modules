@@ -485,7 +485,7 @@ def main():
     ) )
 
     # TODO more checks on the data here - are the certs provided
-    if k5_get_router_id_from_name(module) is '':
+    if k5_get_router_id_from_name(module,module.params['k5_auth']) is '':
         module.fail_json(msg="Router does not exist")
         
 
