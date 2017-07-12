@@ -160,6 +160,68 @@ def k5_get_server_facts(module, k5_facts):
     else:
       module.fail_json(msg="Missing servers in response to server details request")
 
+def k5_check_port_exists(module, k5_facts):
+    """Check if a port_name already exists"""
+
+    endpoint = k5_facts['endpoints']['networking']
+    auth_token = k5_facts['auth_token']
+    port_name = module.params['port']
+
+    session = requests.Session()
+
+    headers = {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Auth-Token': auth_token }
+
+    url = endpoint + '/v2.0/ports'
+
+    k5_debug_add('endpoint: {0}'.format(endpoint))
+    k5_debug_add('REQ: {0}'.format(url))
+    k5_debug_add('headers: {0}'.format(headers))
+
+    try:
+        response = session.request('GET', url, headers=headers)
+    except requests.exceptions.RequestException as e:
+        module.fail_json(msg=e)
+
+    # we failed to get data
+    if response.status_code not in (200,):
+        module.fail_json(msg="RESP: HTTP Code:" + str(response.status_code) + " " + str(response.content), debug=k5_debug_out)
+
+    for n in response.json()['ports']:
+        if str(n['name']) == port_name or str(n['id']) == port_name:
+            return n
+
+    return False
+
+def k5_check_port_for_floating_ip(port_id, module, k5_facts):
+    """Check if a port_name already exists"""
+
+    endpoint = k5_facts['endpoints']['networking']
+    auth_token = k5_facts['auth_token']
+
+    session = requests.Session()
+
+    headers = {'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Auth-Token': auth_token }
+
+    url = endpoint + '/v2.0/floatingips?port_id=' + str(port_id)
+
+    k5_debug_add('endpoint: {0}'.format(endpoint))
+    k5_debug_add('REQ: {0}'.format(url))
+    k5_debug_add('headers: {0}'.format(headers))
+
+    try:
+        response = session.request('GET', url, headers=headers)
+    except requests.exceptions.RequestException as e:
+        module.fail_json(msg=e)
+
+    # we failed to get data
+    if response.status_code not in (200,):
+        module.fail_json(msg="RESP: HTTP Code:" + str(response.status_code) + " " + str(response.content), debug=k5_debug_out)
+
+    for n in response.json()['floatingips']:
+        if str(n['port_id']) == port_id:
+            return n
+
+    return False
 
 def k5_get_server_port_facts(module, k5_facts, server_id):
     """Get port facts for a server"""
@@ -246,36 +308,9 @@ def k5_create_floating_ip_for_server(module):
     endpoint = k5_facts['endpoints']['networking']
     auth_token = k5_facts['auth_token']
 
-    server_name = module.params['server']
     fixed_ip = module.params['fixed_ip']
+
     ext_net = module.params['ext_network']
-
-    # we need the server_id not server_name, so grab it
-    server_facts = k5_get_server_facts(module, k5_facts)
-
-    az = ''
-    server_id = ''
-    for s in server_facts['servers']:
-        if s['name'] == server_name:
-            server_id = s['id']
-            az = s['OS-EXT-AZ:availability_zone']
-            # check if that server has a floating IP already assigned - maybe people want two floaing IPs, but we arent allowing that here
-            for subnets in s['addresses']:
-                for subnet in s['addresses'][subnets]:
-                    if subnet['OS-EXT-IPS:type'] == 'floating':
-                        module.exit_json(changed=False, msg="Floating IP " + subnet['addr'] + " already assigned")
-
-            break
-
-    if server_id == '':
-      if k5_debug:
-          module.exit_json(changed=False, msg="Server " + server_name + " not found", debug=k5_debug_out)
-      else:
-          module.exit_json(changed=False, msg="Server " + server_name + " not found")
-
-    #
-    # get ext_net id
-    #
     network_id = k5_get_network_id_from_name(module, k5_facts) 
     if network_id == '':
       if k5_debug:
@@ -283,30 +318,71 @@ def k5_create_floating_ip_for_server(module):
       else:
           module.exit_json(changed=False, msg="Network " + network_name + " not found")
 
+    if 'server' in module.params and module.params['server'] is not None and module.params['server'] != '':
+      server_name = module.params['server']
+      # we need the server_id not server_name, so grab it
+      server_facts = k5_get_server_facts(module, k5_facts)
 
-    #
-    # get port facts
-    #
-    port_facts = k5_get_server_port_facts(module, k5_facts, server_id)
+      az = ''
+      server_id = ''
+      for s in server_facts['servers']:
+          if s['name'] == server_name:
+              server_id = s['id']
+              az = s['OS-EXT-AZ:availability_zone']
+              # check if that server has a floating IP already assigned - maybe people want two floaing IPs, but we arent allowing that here
+              for subnets in s['addresses']:
+                  for subnet in s['addresses'][subnets]:
+                      if subnet['OS-EXT-IPS:type'] == 'floating':
+                          module.exit_json(changed=False, msg="Floating IP " + subnet['addr'] + " already assigned")
 
-    k5_debug_add(port_facts)
+              break
 
-    try:
-      # attach to first port
-      port = port_facts['interfaceAttachments'][0]
-      port_id = port['port_id']
-      #network_id = port['net_id'] # wrong net id, needs to be external
-    except:
-      # is there any need for this?  surely a port always exists?    
-      if k5_debug:
-          module.exit_json(changed=False, msg="Port on " + server_name + " not found", debug=k5_debug_out)
+      if server_id == '':
+        if k5_debug:
+            module.exit_json(changed=False, msg="Server " + server_name + " not found", debug=k5_debug_out)
+        else:
+            module.exit_json(changed=False, msg="Server " + server_name + " not found")
+
+      #
+      # get port facts
+      #
+      port_facts = k5_get_server_port_facts(module, k5_facts, server_id)
+
+      k5_debug_add(port_facts)
+
+      try:
+        # attach to first port
+        port = port_facts['interfaceAttachments'][0]
+        port_id = port['port_id']
+        #network_id = port['net_id'] # wrong net id, needs to be external
+      except:
+        # is there any need for this?  surely a port always exists?    
+        if k5_debug:
+            module.exit_json(changed=False, msg="Port on " + server_name + " not found", debug=k5_debug_out)
+        else:
+            module.exit_json(changed=False, msg="Port on " + server_name + " not found")
+
+    if 'port' in module.params:
+      port = k5_check_port_exists(module, k5_facts)
+      k5_debug_add('port: '+str(port))
+      if port:
+        az = port['availability_zone']
+        port_id = port['id']
+        port_details = k5_check_port_for_floating_ip(port_id, module, k5_facts)
+        k5_debug_add('port_details: ' + str(port_details))
+        if port_details:
+          if k5_debug:
+              module.exit_json(changed=False, msg="Port " + module.params['port'] + " already has a floating IP address", debug=k5_debug_out)
+          else:
+              module.exit_json(changed=False, msg="Port " + module.params['port'] + " already has a floating IP address")
       else:
-          module.exit_json(changed=False, msg="Port on " + server_name + " not found")
+        if k5_debug:
+            module.exit_json(changed=False, msg="Port " + module.params['port'] + " not found", debug=k5_debug_out)
+        else:
+            module.exit_json(changed=False, msg="Port " + module.params['port'] + " not found")
 
     k5_debug_add('port_id: '+str(port_id))
     k5_debug_add('net_id: '+str(network_id))
-    k5_debug_add('auth_token: ' + str(auth_token))
-    k5_debug_add('server_name: '+ str(server_name))
     k5_debug_add('fixed_ip: '+str(fixed_ip))
     k5_debug_add('az: '+str(az))
 
@@ -528,7 +604,7 @@ def k5_check_port_exists(module, k5_facts):
 
     for n in response.json()['ports']:
         #k5_debug_add("Found port name: " + str(n['name']))
-        if str(n['name']) == port_name:
+        if str(n['name']) == port_name or str(n['id']) == port_name:
             #k5_debug_add("Found it!")
             return n
 
@@ -738,18 +814,12 @@ def main():
 
         # constraints
         mutually_exclusive=[
-         [ 'server', 'port' ],
-         [ 'port', 'fixed_ip' ]
+          [ 'server', 'port' ],
+          [ 'port', 'fixed_ip' ]
         ],
 
-# TODO this is broken - it keeps asking for server, fixed_ip, ext_network and ignores port...
-#        required_together=[
-#         [ 'server', 'fixed_ip', 'ext_network' ],
-#         [ 'port', 'floating_ip', 'ext_network' ],
-#        ],
-    
         required_one_of=[
-         [ 'server', 'port']
+          [ 'server', 'port']
         ]
     )
 
@@ -769,7 +839,10 @@ def main():
         # ports
         #
         elif module.params['port'] is not None:
-            k5_assign_floating_ip_to_port(module) # assign an already created floating/public ip to a port
+            if module.params['floating_ip'] is not None:
+                k5_assign_floating_ip_to_server(module) # assign an already created floating/public ip to a server
+            else:
+                k5_create_floating_ip_for_server(module) # originally we wanted to just create one from the DHCP range without pre-creating it
         else:
             module.fail_json(msg="Need server or port to be defined")
 
@@ -778,6 +851,3 @@ def main():
 
 if __name__ == '__main__':  
     main()
-
-
-
