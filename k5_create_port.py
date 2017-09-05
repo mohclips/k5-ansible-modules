@@ -390,17 +390,17 @@ def k5_create_port(module):
     network_id = k5_get_network_id_from_name(module, k5_facts)
     if network_id == '':
         if k5_debug:
-            module.exit_json(changed=False, msg="Network " + network_name + " not found", debug=k5_debug_out)
+            module.fail_json(changed=False, msg="Network " + network_name + " not found", debug=k5_debug_out)
         else:
-            module.exit_json(changed=False, msg="Network " + network_name + " not found")
+            module.fail_json(changed=False, msg="Network " + network_name + " not found")
 
     # we need the subnet_id not subnet_name, so grab it
     subnet_id = k5_get_subnet_id_from_name(module, k5_facts)
     if subnet_id == '':
         if k5_debug:
-            module.exit_json(changed=False, msg="Subnet " + subnet_name + " not found", debug=k5_debug_out)
+            module.fail_json(changed=False, msg="Subnet " + subnet_name + " not found", debug=k5_debug_out)
         else:
-            module.exit_json(changed=False, msg="Subnet " + subnet_name + " not found")
+            module.fail_json(changed=False, msg="Subnet " + subnet_name + " not found")
 
     # check the security groups exist
     sec_grp_list = k5_get_security_group_ids_from_names(module, k5_facts)
