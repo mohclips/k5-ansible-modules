@@ -178,6 +178,8 @@ def k5_update_router_add_ports(module):
     ports = module.params['ports']
     router_name = module.params['router_name']
 
+    if len(ports) == 0:
+        module.exit_json(changed=False, msg="No ports specified")
    
     # we need the router_id not router_name, so grab it
     router_id = k5_get_router_id_from_name(module, k5_facts)
@@ -229,6 +231,8 @@ def k5_update_router_add_ports(module):
             if k5_debug:
                 module.exit_json(changed=True, msg="Router ports Update Successful", k5_router_facts=response.json(), debug=k5_debug_out )
 
+        else:
+            module.fail_json(msg="port is not found for {}".format(port))
 
     module.exit_json(changed=True, msg="Router ports Update Successful", k5_router_facts=response.json()['router'])
 
