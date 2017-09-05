@@ -840,9 +840,10 @@ def main():
         #
         elif module.params['port'] is not None:
             if module.params['floating_ip'] is not None:
-                k5_assign_floating_ip_to_server(module) # assign an already created floating/public ip to a server
+                k5_assign_floating_ip_to_port(module) # assign an already created floating/public ip to a server
             else:
-                k5_create_floating_ip_for_server(module) # originally we wanted to just create one from the DHCP range without pre-creating it
+            #    k5_create_floating_ip_for_server(module) # originally we wanted to just create one from the DHCP range without pre-creating it  # TODO does this actually work?
+                module.fail_json(msg="Cannot create a floating IP for a port - define floating IP first") #TODO fix this
         else:
             module.fail_json(msg="Need server or port to be defined")
 
