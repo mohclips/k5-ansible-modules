@@ -305,16 +305,33 @@ def k5_get_auth_token(module):
     headers = {'Content-Type': 'application/json', 'Accept': 'application/json'}
 
     url = k5_endpoints['identity'] + '/v3/auth/tokens'
+
+    # note 'scope' is missing
+    query_json = {'auth': {
+                            'identity': {
+                                'methods': ['password'],
+                                'password': {
+                                    'user': {
+                                        'domain': {
+                                            'name': k5_auth_spec['os_user_domain']
+                                        },
+                                        'name': k5_auth_spec['os_username'],
+                                        'password': k5_auth_spec['os_password']
+                                    }
+                                }
+                            }
+                       }
+                    }
+
+    if module.params['token_type'].lower() == 'global':
+        # K5 global token required - change URL
+        url = 'https://identity.gls.cloud.global.fujitsu.com/v3/auth/tokens'
+    else:
+        # scope regional token to a project
+        query_json['auth']['scope'] = { 'project': { 'id': k5_auth_spec['os_project_id'] } }
+
     k5_debug_add('endpoint: {0}'.format(url))
-
-    query_json = {'auth': {'identity': {'methods': ['password'],
-                           'password': {'user': {'domain': {'name': k5_auth_spec['os_user_domain']},
-                                                 'name': k5_auth_spec['os_username'],
-                                                 'password': k5_auth_spec['os_password']}}},
-              'scope': {'project': {'id': k5_auth_spec['os_project_id']}}}}
-
-
-    #k5_debug_add('json: {0}'.format(query_json))
+#    k5_debug_add('json: {0}'.format(query_json))
     k5_debug_add('REQ: {0}'.format(url))
 
     try:
@@ -324,7 +341,7 @@ def k5_get_auth_token(module):
 
     # we failed to authenticate
     if response.status_code not in (201,):
-        module.fail_json(msg="RESP: HTTP Code:" + str(response.status_code) + " " + str(response.content), debug=k5_debug_out)
+        module.fail_json(msg="RESP: HTTP Code:" + str(response.status_code) + " " + str(response.content), k5_debug=k5_debug_out)
 
     # we authenticated, now check the token is present
     if 'X-Subject-Token' in response.headers.keys():
@@ -340,22 +357,28 @@ def k5_get_auth_token(module):
     k5_get_endpoints(response.json())
 
     # clear os_password from spec before we send it back to the user
-    del k5_auth_spec['os_password']
+    k5_auth_spec['os_password'] = 'xxxxxxxxxxxxxxxxx'
+
+    resp = response.json()['token']
 
     # our json to return as succesful
     k5_auth = {
         "auth_token": auth_token,
+        "token_type": module.params['token_type'].lower(),
         "auth_spec": k5_auth_spec,
         "endpoints": k5_endpoints,
-        "issued": response.json()['token']['issued_at'], 
-        "expiry": response.json()['token']['expires_at'],
+        "issued": resp['issued_at'], 
+        "expiry": resp['expires_at'],
+        "roles": resp['roles'],
+        "user": resp['user'],
+        "catalog": resp['catalog'], 
         "K5_DEBUG": k5_debug
     }
 
 #    if k5_debug:
 #        k5_auth['server_response']=response.json()
 
-    module.exit_json(changed=True, msg="Authentication Successful", k5_auth_facts=k5_auth)
+    module.exit_json(changed=True, msg="Authentication Successful", k5_auth_facts=k5_auth, k5_debug=k5_debug_out)
 
 ######################################################################################
 
@@ -363,10 +386,11 @@ def main():
 
     module = AnsibleModule( argument_spec=dict(
         username = dict(required=False, default=None, type='str'),
-        password = dict(required=False, default=None, type='str'),
+        password = dict(required=False, default=None, type='str', no_log=True),
         user_domain = dict(required=False, default=None, type='str'), 
         project_id = dict(required=False, default=None, type='str'),
         region_name = dict(required=False, default=None, type='str'),
+        token_type = dict(default='regional', choices=['regional', 'global']),
         cloud = dict(required=False, default=None, type='str')
     ) )
 
