@@ -179,7 +179,7 @@ def k5_create_project(module):
     if k5_debug:
         module.exit_json(changed=True, msg="Create Project Successful", debug=k5_debug_out, project=response.json()['project'] )
 
-    module.exit_json(changed=True, msg="Create Project Successful" )
+    module.exit_json(changed=True, msg="Create Project Successful", project=response.json()['project'] )
 
 
 def k5_delete_project(module):
@@ -253,7 +253,7 @@ def k5_patch_project(module):
     if k5_debug:
         module.exit_json(changed=True, msg="Create Project Successful", project=response.json()['project'], debug=k5_debug_out )
 
-    module.exit_json(changed=True, msg="Create Project Successful" )
+    module.exit_json(changed=True, msg="Create Project Successful", project=response.json()['project'] )
 
 
 ######################################################################################
