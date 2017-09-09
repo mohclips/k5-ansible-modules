@@ -1,0 +1,77 @@
+# vim: noai:ts=2:sw=2:et
+---
+
+- name: "K5 Auth Test"
+
+  hosts: localhost
+
+  become: no
+  become_user: root
+  become_method: sudo
+
+  gather_facts: no
+
+  serial: 10  # do 10 hosts at a time
+
+  vars:
+    my_project: "zzMohclips-test"
+
+  tasks:
+
+    - k5_auth:
+        token_type: regional
+      register: k5_auth_reg
+
+    - name: List Projects
+      k5_project:
+        state: list
+        k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
+      register: projects
+#    - debug: var=projects
+
+    - name: Create New Project
+      k5_project:
+        project_name: "{{ my_project }}"
+        state: present
+        k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
+      register: projects
+#    - debug: var=projects
+
+    - name: Create Project - this should exit saying the project already exists
+      k5_project:
+        project_name: "{{ my_project }}"
+        state: present
+        k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
+      register: projects
+
+    - name: List Projects
+      k5_project:
+        state: list
+        k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
+      register: projects
+#    - debug: var=projects
+
+    - name: Disable project
+      k5_project:
+        project_name: "{{ my_project }}"
+        state: disable
+        k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
+      register: projects
+#    - debug: var=projects
+
+    - name: List Projects
+      k5_project:
+        state: list
+        k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
+      register: projects
+#    - debug: var=projects
+
+    - name: Enable project
+      k5_project:
+        project_name: "{{ my_project }}"
+        state: enable
+        k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
+      register: projects
+#    - debug: var=projects
+
+
