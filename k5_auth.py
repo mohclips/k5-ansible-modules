@@ -319,6 +319,11 @@ def k5_get_auth_token(module):
                                         'password': k5_auth_spec['os_password']
                                     }
                                 }
+                            },
+                            "scope": {
+                                "project": {
+                                    "id": k5_auth_spec['os_project_id']
+                                }
                             }
                        }
                     }
@@ -326,12 +331,18 @@ def k5_get_auth_token(module):
     if module.params['token_type'].lower() == 'global':
         # K5 global token required - change URL
         url = 'https://identity.gls.cloud.global.fujitsu.com/v3/auth/tokens'
-    else:
-        # scope regional token to a project
-        query_json['auth']['scope'] = { 'project': { 'id': k5_auth_spec['os_project_id'] } }
+#    else:
+#        # scope regional token to a project
+#        query_json['auth']['scope'] = { 'project': { 'id': k5_auth_spec['os_project_id'] } }
+
+    if module.params['scoped'] == False:
+        k5_debug_add('removing token scope')
+        if 'scope' in query_json['auth']:
+            del query_json['auth']['scope']
 
     k5_debug_add('endpoint: {0}'.format(url))
-#    k5_debug_add('json: {0}'.format(query_json))
+    k5_debug_add('query_json:')
+    k5_debug_add(query_json)
     k5_debug_add('REQ: {0}'.format(url))
 
     try:
@@ -391,7 +402,8 @@ def main():
         project_id = dict(required=False, default=None, type='str'),
         region_name = dict(required=False, default=None, type='str'),
         token_type = dict(default='regional', choices=['regional', 'global']),
-        cloud = dict(required=False, default=None, type='str')
+        cloud = dict(required=False, default=None, type='str'),
+        scoped = dict(required=False, default=True, type='bool')
     ) )
 
     k5_get_auth_token(module)
