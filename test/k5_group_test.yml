@@ -1,0 +1,101 @@
+# vim: noai:ts=2:sw=2:et
+---
+
+- name: "K5 Group Test"
+
+  hosts: localhost
+
+  become: no
+  become_user: root
+  become_method: sudo
+
+  gather_facts: no
+
+  serial: 10  # do 10 hosts at a time
+
+  vars:
+    my_group: "zzMohclips-test-Admin"
+    project_name: "zzMohclips-test"
+    role_name: "cpf_systemowner"
+  
+    full_group: "SE_MIS_Admin"
+
+  tasks:
+
+    - k5_auth:
+        token_type: global
+      register: k5_auth_reg
+
+    - name: Create New Group
+      k5_group:
+        group_name: "{{ my_group }}"
+        state: present
+        k5_auth_global: "{{ k5_auth_global.k5_auth_facts }}"
+
+# if you add yourself, you token gets invalidated
+    - name: Add users to group
+      k5_group:
+        group_name: "{{ my_group }}"
+        state: add_user
+        user_name: "{{ item }}"
+        k5_auth_global: "{{ k5_auth_global.k5_auth_facts }}"
+      with_items:
+#        - crossn
+        - landg   
+        - purvisi
+        - beverlyp
+        - hardingr
+
+
+    - name: List Users in Group
+      k5_group:
+        group_name: "{{ my_group }}"
+        state: list_users
+        k5_auth_global: "{{ k5_auth_global.k5_auth_facts }}"
+
+
+    - name: List Groups
+      k5_group:
+        state: list
+        k5_auth_global: "{{ k5_auth_global.k5_auth_facts }}"
+
+    - name: Create New Group
+      k5_group:
+        group_name: "{{ my_group }}"
+        state: present
+        k5_auth_global: "{{ k5_auth_global.k5_auth_facts }}"
+
+    - name: Create Group - this should exit saying the project already exists
+      k5_group:
+        group_name: "{{ my_group }}"
+        state: present
+        k5_auth_global: "{{ k5_auth_global.k5_auth_facts }}"
+
+#    - name: Delete Group
+#      k5_group:
+#        group_name: "{{ my_group }}"
+#        state: absent
+#        k5_auth_global: "{{ k5_auth_global.k5_auth_facts }}"
+
+    - k5_auth:
+        token_type: regional
+        scoped: False
+      register: k5_auth_regional
+
+    - k5_auth:
+        token_type: global
+        scoped: True
+        user_domain: "YssmW1yI"
+        project_id: eadb882573ac40b1b101eac93009a313 # default project id for YssmW1yI-prj
+      register: k5_auth_global
+
+    - name: Assign a role to a group in a project
+      k5_group:
+        group_name: "{{ my_group }}"
+        project_name: "{{ project_name }}"
+        role_name: "{{ role_name }}"
+        state: add_role_to_project_group
+        k5_auth_regional: "{{ k5_auth_regional.k5_auth_facts }}"
+        k5_auth_global: "{{ k5_auth_global.k5_auth_facts }}"
+
+
