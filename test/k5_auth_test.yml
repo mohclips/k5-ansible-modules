@@ -1,0 +1,29 @@
+# vim: noai:ts=2:sw=2:et
+---
+
+- name: "K5 Auth Test"
+
+  hosts: localhost
+
+  become: no
+  become_user: root
+  become_method: sudo
+
+  gather_facts: no
+
+  serial: 10  # do 10 hosts at a time
+
+
+  tasks:
+
+    - k5_auth:
+        token_type: regional
+      register: regional_auth
+
+    - debug: var=regional_auth    
+
+    - k5_auth:
+        token_type: global
+      register: global_auth
+
+    - debug: var=global_auth
