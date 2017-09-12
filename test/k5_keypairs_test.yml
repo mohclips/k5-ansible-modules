@@ -1,0 +1,91 @@
+# vim: noai:ts=2:sw=2:et
+---
+
+- name: "K5 Keypairs Test"
+
+  hosts: localhost
+
+  become: no
+  become_user: root
+  become_method: sudo
+
+  gather_facts: no
+
+  serial: 10  # do 10 hosts at a time
+
+  vars:
+    project_name: "UK_C_DCS"
+
+    my_public_ssh_key: "ssh-rsa AAAAB3NzaC1yc2EAAAABIwAAAIEAtBhu2svBD1aCOc493hoplA4VEHWDNzSoN4AE9x5LrNLl20zEv05WLPpcLZzf5gnb723SUhc0MVzOyrHiQXbyrI8gqBnBOAgdz17FQheicI9n04cztXihm8wnfo83lU9wZE0CrzMgR17DzxjaReOMMBy4I3TQB496+9IYB1fNp2c= some key i created"
+
+    first_key: "test-1a"
+    second_key: "test-upload-key-1a"
+
+  tasks:
+
+    - k5_auth:
+        token_type: regional
+      register: regional_auth
+
+    - k5_keypair:
+        state: list
+        project_name: "{{ project_name }}"
+        k5_auth: "{{ regional_auth.k5_auth_facts }}"
+      register: sshkeys
+    - debug: var=sshkeys
+
+    - k5_keypair:
+        project_name: "{{ project_name }}"
+        state: present
+        keypair_name: "{{ first_key }}"
+        availability_zone: "uk-1a"
+        k5_auth: "{{ regional_auth.k5_auth_facts }}"
+      register: sshkeys
+    - name: "Note you should grab the PRIVATE KEY and store it - one time view only"
+      debug: var=sshkeys
+
+    - k5_keypair:
+        project_name: "{{ project_name }}"
+        state: present
+        keypair_name: "{{ first_key }}"
+        availability_zone: "uk-1a"
+        k5_auth: "{{ regional_auth.k5_auth_facts }}"
+      register: sshkeys
+    - debug: var=sshkeys
+
+    - k5_keypair:
+        project_name: "{{ project_name }}"
+        state: present
+        keypair_name: "{{ second_key }}"
+        ssh_public_key: "{{ my_public_ssh_key }}"
+        availability_zone: "uk-1a"
+        k5_auth: "{{ regional_auth.k5_auth_facts }}"
+      register: sshkeys
+    - debug: var=sshkeys
+
+    - k5_keypair:
+        project_name: "{{ project_name }}"
+        state: absent
+        keypair_name: "{{ second_key }}"
+        availability_zone: "uk-1a"
+        k5_auth: "{{ regional_auth.k5_auth_facts }}"
+      register: sshkeys
+    - debug: var=sshkeys
+
+    - k5_keypair:
+        project_name: "{{ project_name }}"
+        state: absent
+        keypair_name: "{{ first_key }}"
+        availability_zone: "uk-1a"
+        k5_auth: "{{ regional_auth.k5_auth_facts }}"
+      register: sshkeys
+    - debug: var=sshkeys
+
+    - k5_keypair:
+        state: list
+        project_name: "{{ project_name }}"
+        k5_auth: "{{ regional_auth.k5_auth_facts }}"
+      register: sshkeys
+    - debug: var=sshkeys
+
+
