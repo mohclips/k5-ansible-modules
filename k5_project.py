@@ -133,13 +133,10 @@ def k5_create_project(module):
     project_name = module.params['project_name']
 
     projects_list = k5_list_projects(module) # get projects available to the user the token was created by
-
-    #k5_debug_add('projects: {0}'.format(projects_list))
-
     matched_projects = [x for x in projects_list if x['name'] == project_name]
 
     if len(matched_projects) > 0:
-        module.exit_json(changed=False, msg="Project already exists")
+        module.exit_json(changed=False, msg="Project already exists", project=matched_projects[0])
 
     k5_debug_add('auth_token: {0}'.format(auth_token))
     k5_debug_add('project_name: {0}'.format(project_name))
