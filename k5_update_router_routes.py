@@ -41,8 +41,10 @@ EXAMPLES = '''
 - k5_update_router_routes:
         state: present
         routes: 
-          - "172.16.1.1","10.10.10.0/24"
-          - "172.16.1.1","10.10.20.0/24"
+          - nexthop: "10.10.10.0/24"
+            destination: "172.16.1.1"
+          - nexthop: "10.10.20.0/24"
+            destination: "172.16.1.1"
         router_name: "nx-test-net-1a"
         k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
 '''
