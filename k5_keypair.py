@@ -152,13 +152,16 @@ def k5_list_keypairs(module):
     else:
         module.fail_json(msg="k5_auth_facts not found, have you run k5_auth?")        
 
-    # find project_id
-    project_name = module.params['project_name']
-    keystone_project_list = k5_get_keystoneobject_list(module, k5_facts, 'projects')
-    matched_projects = [x for x in keystone_project_list['projects'] if x['name'] == project_name]
-    if len(matched_projects) == 0:
-        module.exit_json(changed=False, msg="Project does not exist", k5_debug=k5_debug_out)
-    project_id = matched_projects[0]['id']
+    project_id = k5_facts['auth_spec']['os_project_id']
+
+    if 'project_name' in module.params and module.params['project_name'] != None:
+        # find project_id
+        project_name = module.params['project_name']
+        keystone_project_list = k5_get_keystoneobject_list(module, k5_facts, 'projects')
+        matched_projects = [x for x in keystone_project_list['projects'] if x['name'] == project_name]
+        if len(matched_projects) == 0:
+            module.exit_json(changed=False, msg="Project does not exist", k5_debug=k5_debug_out)
+        project_id = matched_projects[0]['id']
 
     #endpoint = k5_facts['endpoints']['compute']
     endpoint = "https://compute." + k5_facts['auth_spec']['os_region_name'] + ".cloud.global.fujitsu.com/"
@@ -187,7 +190,7 @@ def k5_list_keypairs(module):
 
 def k5_create_keypair(module):
     """Create a keypair"""
-    
+
     if 'auth_spec' in module.params['k5_auth']: 
         k5_facts = module.params['k5_auth']
     else:
@@ -197,13 +200,16 @@ def k5_create_keypair(module):
     endpoint = "https://compute." + k5_facts['auth_spec']['os_region_name'] + ".cloud.global.fujitsu.com/"
     auth_token = k5_facts['auth_token']
 
-    # find project_id
-    project_name = module.params['project_name']
-    keystone_project_list = k5_get_keystoneobject_list(module, k5_facts, 'projects')
-    matched_projects = [x for x in keystone_project_list['projects'] if x['name'] == project_name]
-    if len(matched_projects) == 0:
-        module.exit_json(changed=False, msg="Project does not exist", k5_debug=k5_debug_out)
-    project_id = matched_projects[0]['id']
+    project_id = k5_facts['auth_spec']['os_project_id']
+
+    if 'project_name' in module.params and module.params['project_name'] != None:
+        # find project_id
+        project_name = module.params['project_name']
+        keystone_project_list = k5_get_keystoneobject_list(module, k5_facts, 'projects')
+        matched_projects = [x for x in keystone_project_list['projects'] if x['name'] == project_name]
+        if len(matched_projects) == 0:
+            module.exit_json(changed=False, msg="Project does not exist", k5_debug=k5_debug_out)
+        project_id = matched_projects[0]['id']
 
     k5_debug_add('auth_token: {0}'.format(auth_token))
         
@@ -256,13 +262,16 @@ def k5_delete_keypair(module):
     endpoint = "https://compute." + k5_facts['auth_spec']['os_region_name'] + ".cloud.global.fujitsu.com/"
     auth_token = k5_facts['auth_token']
 
-    # find project_id
-    project_name = module.params['project_name']
-    keystone_project_list = k5_get_keystoneobject_list(module, k5_facts, 'projects')
-    matched_projects = [x for x in keystone_project_list['projects'] if x['name'] == project_name]
-    if len(matched_projects) == 0:
-        module.exit_json(changed=False, msg="Project does not exist", k5_debug=k5_debug_out)
-    project_id = matched_projects[0]['id']
+    project_id = k5_facts['auth_spec']['os_project_id']
+
+    if 'project_name' in module.params and module.params['project_name'] != None:
+        # find project_id
+        project_name = module.params['project_name']
+        keystone_project_list = k5_get_keystoneobject_list(module, k5_facts, 'projects')
+        matched_projects = [x for x in keystone_project_list['projects'] if x['name'] == project_name]
+        if len(matched_projects) == 0:
+            module.exit_json(changed=False, msg="Project does not exist", k5_debug=k5_debug_out)
+        project_id = matched_projects[0]['id']
 
     k5_debug_add('auth_token: {0}'.format(auth_token))
         
@@ -306,9 +315,8 @@ def main():
     ),
         # constraints
         required_if=[
-            ('state', 'present', ['project_name', 'keypair_name', 'availability_zone']),
-            ('state', 'absent', ['project_name', 'keypair_name', 'availability_zone']),
-            ('state', 'list', ['project_name'])
+            ('state', 'present', ['keypair_name', 'availability_zone']),
+            ('state', 'absent', ['keypair_name', 'availability_zone'])
         ]
     )
 
