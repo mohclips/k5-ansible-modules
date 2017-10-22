@@ -7,21 +7,31 @@ ANSIBLE_METADATA = {'status': ['preview'],
 DOCUMENTATION = '''
 ---
 module: k5_auth
-short_description: Retrieve an authentication token from K5
+short_description: Create and retrieve an authentication token from K5
 version_added: "1.0"
 description:
     - Login and Retrieve an authentication token from K5, plus the endpoints
 options:
    username:
      description:
-        - Login username.
+        - Login username. LEGACY will be removed in future versions.
      required: false
      default: None
    password:
      description:
-        - Password of user.
+        - Password of user. LEGACY will be removed in future versions.
      required: false
      default: None
+   token_type:
+     description:
+        - Regional or Global token type creation.
+     required: false
+     default: Regional
+   scoped:
+     description:
+        - Set scope of token
+     required: false
+     default: True
    user_domain:
      description:
         - Domain the user belongs to.
@@ -37,20 +47,50 @@ options:
        - Region the user belongs to.
      required: false
      default: None     
+
 requirements:
     - "python >= 2.6"
 '''
 
 EXAMPLES = '''
-# Get auth token using module paramters
-- k5_auth:
-     username: admin
-     password: secret
-     user_domain: demo
-     project_id: 9500d1d6b17936ea97745d5de30cc112
-     region_name: uk-1
-# Get auth token using Openstack OS_* environment variables
-- k5_auth:
+# Requires access to OS_* environment variables or os_client_config cloud.yaml
+ 
+- name: "Regional default scoped"
+  k5_auth:
+    token_type: regional
+  register: regional_auth
+
+
+- name: "Regional un-scoped"
+  k5_auth:
+    token_type: regional
+    scoped: False
+  register: regional_auth
+
+
+- name: "Regional set as scoped"
+  k5_auth:
+    token_type: regional
+    scoped: True
+  register: regional_auth
+
+
+- name: "Global un-scoped"
+  k5_auth:
+    token_type: global
+    scoped: False
+  register: global_auth
+
+
+- name: "Global set scoped - and override some external vars"
+  k5_auth:
+    token_type: global
+    scoped: True
+    user_domain: "YssmW1yI"
+    project_id: eadb882573ac40b1b101eac93009a313 # default project id for YssmW1yI-prj
+  register: global_auth
+
+
 '''
 
 RETURN = '''
