@@ -218,37 +218,48 @@ def k5_get_auth_spec(module):
         cloud_config = os_client_config.OpenStackConfig().get_one_cloud(mp['cloud'])
         cloud_configured = True
     else:
-        all_cloud_config = os_client_config.OpenStackConfig().get_all_clouds()
-        cloud_names = ""
-        cloud_counter = 0
-        for cloud in all_cloud_config:
-            if cloud.name == "envvars":
-                cloud_config = os_client_config.OpenStackConfig().get_one_cloud('envvars')
-                cloud_configured = True
+        try:
+            all_cloud_config = os_client_config.OpenStackConfig().get_all_clouds()
+            cloud_names = ""
+            cloud_counter = 0
+            for cloud in all_cloud_config:
+                if cloud.name == "envvars":
+                    cloud_config = os_client_config.OpenStackConfig().get_one_cloud('envvars')
+                    cloud_configured = True
 
-            cloud_counter = cloud_counter + 1
+                cloud_counter = cloud_counter + 1
 
-            if cloud_names != "":
-                cloud_names = cloud_names + ", "
+                if cloud_names != "":
+                    cloud_names = cloud_names + ", "
 
-            cloud_names = cloud_names + "'cloud=" + cloud.name + " region=" + cloud.region +"'"
+                cloud_names = cloud_names + "'cloud=" + cloud.name + " region=" + cloud.region +"'"
 
-        if cloud_configured == False:
-            if k5_debug:
-                module.fail_json(msg='Please select a cloud/region pair from ' + cloud_names, k5_debug=k5_debug_out)
-            else:
-                module.fail_json(msg='Please select a cloud/region pair from ' + cloud_names)
+            if cloud_configured == False:
+                if k5_debug:
+                    module.fail_json(msg='Found a clouds.yaml file. Please select a cloud/region pair from ' + cloud_names, k5_debug=k5_debug_out)
+                else:
+                    module.fail_json(msg='Found a clouds.yaml file. Please select a cloud/region pair from ' + cloud_names)
 
-    k5_debug_add(cloud_config.config)
+        except Exception as e:
+            # no envvars AND no cloud.yaml found!
+            # keystoneauth1.exceptions.auth_plugins.MissingRequiredOptions: Auth plugin requires parameters which were not given: auth_url
+            warn_msg="Old style LEGACY auth found, consider using openstack OS_ ENVVARS or cloud.yaml in the future"
+            k5_debug_add(warn_msg)
+            k5_debug_add(str(e))
+            module.warn(warn_msg)
+            # no fail here, just pass though for now!
 
-    # finish here! Debug begins!
+    if cloud_configured == True:
+        k5_debug_add(cloud_config.config)
 
-    OS_USERNAME = cloud_config.auth['username']
-    OS_PASSWORD = cloud_config.auth['password']
-    OS_REGION_NAME = cloud_config.region
-    OS_PROJECT_ID = cloud_config.auth['project_id']
-    OS_USER_DOMAIN_NAME = cloud_config.auth['user_domain_name']
-    
+        # finish here! Debug begins!
+
+        OS_USERNAME = cloud_config.auth['username']
+        OS_PASSWORD = cloud_config.auth['password']
+        OS_REGION_NAME = cloud_config.region
+        OS_PROJECT_ID = cloud_config.auth['project_id']
+        OS_USER_DOMAIN_NAME = cloud_config.auth['user_domain_name']
+        
     # now overwrite the vars if provided within the playbook module
 
     if 'username' in mp and mp['username']:
