@@ -394,6 +394,7 @@ def k5_get_auth_token(module):
         "roles": resp['roles'],
         "user": resp['user'],
         "catalog": resp['catalog'], 
+        "scoped": module.params['scoped'],
         "K5_DEBUG": k5_debug
     }
 

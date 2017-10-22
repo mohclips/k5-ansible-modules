@@ -11,19 +11,74 @@
 
   gather_facts: no
 
-  serial: 10  # do 10 hosts at a time
-
-
   tasks:
 
-    - k5_auth:
-        token_type: regional
-      register: regional_auth
+    - name: "Regional tests"
+      block: 
+        - name: "Regional default scoped"
+          k5_auth:
+            token_type: regional
+          register: regional_auth
+        - debug: 
+            msg:
+              - "Token {{ regional_auth.k5_auth_facts.auth_token }}"
+              - "Scoped {{ regional_auth.k5_auth_facts.scoped }}"
+              - "Type {{ regional_auth.k5_auth_facts.token_type }}"
+              - "Expiry {{ regional_auth.k5_auth_facts.expiry }}"
+     
+        - name: "Regional un-scoped"
+          k5_auth:
+            token_type: regional
+            scoped: False
+          register: regional_auth
+        - debug: 
+            msg:
+              - "Token {{ regional_auth.k5_auth_facts.auth_token }}"
+              - "Scoped {{ regional_auth.k5_auth_facts.scoped }}"
+              - "Type {{ regional_auth.k5_auth_facts.token_type }}"
+              - "Expiry {{ regional_auth.k5_auth_facts.expiry }}"
 
-    - debug: var=regional_auth    
+        - name: "Regional set as scoped"
+          k5_auth:
+            token_type: regional
+            scoped: True
+          register: regional_auth
+        - debug: 
+            msg:
+              - "Token {{ regional_auth.k5_auth_facts.auth_token }}"
+              - "Scoped {{ regional_auth.k5_auth_facts.scoped }}"
+              - "Type {{ regional_auth.k5_auth_facts.token_type }}"
+              - "Expiry {{ regional_auth.k5_auth_facts.expiry }}"
 
-    - k5_auth:
-        token_type: global
-      register: global_auth
+      tags: regional_tests
 
-    - debug: var=global_auth
+    - name: "Global tests"
+      block: 
+        - name: "Global un-scoped"
+          k5_auth:
+            token_type: global
+            scoped: False
+          register: global_auth
+        - debug:
+             msg:
+              - "Token {{ global_auth.k5_auth_facts.auth_token }}"
+              - "Scoped {{ global_auth.k5_auth_facts.scoped }}"
+              - "Type {{ global_auth.k5_auth_facts.token_type }}"
+              - "Expiry {{ global_auth.k5_auth_facts.expiry }}"
+
+        - name: "Global set scoped"
+          k5_auth:
+            token_type: global
+            scoped: True
+            user_domain: "YssmW1yI"
+            project_id: eadb882573ac40b1b101eac93009a313 # default project id for YssmW1yI-prj
+          register: global_auth
+        - debug:
+             msg:
+              - "Token {{ global_auth.k5_auth_facts.auth_token }}"
+              - "Scoped {{ global_auth.k5_auth_facts.scoped }}"
+              - "Type {{ global_auth.k5_auth_facts.token_type }}"
+              - "Expiry {{ global_auth.k5_auth_facts.expiry }}"
+
+      tags: global_tests
+
