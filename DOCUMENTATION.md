@@ -1,9 +1,10 @@
 # Ansible K5 modules
-### *Local copy of files modules*
+### *Auto-generated documentation for the K5 modules*
 
 ---
 ### Requirements
 * See official Ansible docs
+* shade == 1.13.2
 
 ---
 ### Modules
