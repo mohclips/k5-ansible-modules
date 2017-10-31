@@ -21,89 +21,9 @@ These are unoffical Ansible modules for Fujitsu K5 Cloud.  I hope in the end Fuj
 No warranty is expressed or Implied, by myself the other developers or Fujitsu.  Use at your own risk.
 
 
-## Modules
+## Module Documentation
 
-### k5_auth
-
-Authenticate to K5, use the returned facts to authenticate on each of the below modules.
-
-### k5_create_router
-
-Create a router in a specified Availability Zone
-
-### k5_create_network
-
-Create a Network in a specified Availability Zone
-
-Also note the K5 API uses different parameters in the network module to regular OpenStack API calls.  
-
-### k5_create_subnet
-
-Create a Subnet in a specified Availability Zone
-
-### k5_create_port
-
-Create a port in a specified Availability Zone
-
-### k5_assign_floating_ip
-
-Assign a floating ip from a specified Availability Zone
-
-### k5_server_console_output
-
-Return the openstack console logs for a defined server, the builds logs or sometimes called Compute Instance Logs.
-
-### k5_novnc_console
-
-Return the URL to a noVNC console for a defined server.  These URLs are time limited (for security purposes).  
-
-### k5_inter_project_link
-
-Link two projects (virtual routers) together.  Developed by Kenny Brown.
-
-### k5_update_router_routes
-
-Update routes on a virtual router.  Developed by Kenny Brown.
-
-### k5_update_router_ports
-
-Add previously created port to router.  Allows adding a fixed IP to a router. Delete a port from a router.
-
-### k5_assign_floating_ip
-
-Assign/Allocate or release/unallocate a floating IP on a server or router.
-
-### k5_key_list
-
-List the secret keys - the certs, pem file contents on K5 for the SSL VPNs
-
-### k5_key_container_list
-
-List the containers for the secret keys for the SSL VPNs
-
-### k5_ssl_vpn_list
-
-List the SSL VPNs
-
-### k5_router_create_ssl_vpn
-
-Create a SSL VPN
-
-### k5_ssl_vpn_delete
-
-Delete a SSL VPN
-
-###k5_key_container_delete
-
-Delete the containers the secrets reside in
-
-###k5_key_delete
-
-Delete the secrets
-
-### k5_router_firewall
-
-Add, Update, Remove a firewall instance on a K5 router
+see [DOCUMENTATION.md]|(DOCUMENTATION.md)
 
 ## Online API Guides
 
@@ -119,7 +39,7 @@ Use my other repo to see a working example:  https://github.com/mohclips/k5-ansi
 
 Set the following if you wish, this is the easiest way and compatible with the env vars of the OpenStack CLI comand.
 
-Or use the parameters in ```k5_auth```.
+Or use the parameters in `k5_auth`.
 
 ```bash
  export OS_USERNAME=obvs
@@ -132,6 +52,15 @@ Or use the parameters in ```k5_auth```.
 ### clouds.y(a)ml / secure.y(a)ml
 See the example files in Examples/clouds.yml and Examples/secure.yml.example
 
+### shade - IMPORTANT
+
+The python shade library needs to be at or below 1.13.2
+
+This is because K5 API does not support the GET / request to the image endpoint as per https://developer.openstack.org/api-ref/image/versions/index.html
+
+Therefore you should downgrade shade to 1.13.2 Eg. `sudo pip install shade==1.13.2`
+
+
 # Contributors
 
 Many thanks to the following people:
@@ -139,5 +68,5 @@ Many thanks to the following people:
 * Nicholas Cross
 * Jon Spriggs
 * Kenny Brown
-
+* Peter Beverley
 
