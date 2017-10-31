@@ -9,6 +9,9 @@
 ---
 ### Modules
 
+
+Number of modules: 26
+
   * [k5_auth - create and retrieve an authentication token from k5](#k5_auth)
   * [k5_create_port - creates a network port to attach to a compute module in an az in k5.](#k5_create_port)
   * [k5_create_subnet - create subnet on k5 in particular az](#k5_create_subnet)
