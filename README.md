@@ -23,7 +23,7 @@ No warranty is expressed or Implied, by myself the other developers or Fujitsu. 
 
 ## Module Documentation
 
-see [DOCUMENTATION.md]|(DOCUMENTATION.md)
+see [DOCUMENTATION.md](DOCUMENTATION.md) which is generated from the inline module documentation metadata.
 
 ## Online API Guides
 
