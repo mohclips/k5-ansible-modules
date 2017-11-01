@@ -7,17 +7,16 @@ ANSIBLE_METADATA = {'status': ['preview'],
 DOCUMENTATION = '''
 ---
 module: k5_ssl_vpn_list
-short_description: 
+short_description:  List SSL VPNs on K5
 version_added: "1.0"
-description:
-    - returns 
 options:
+description:
+    - returns dict of vpns
 requirements:
     - "python >= 2.6"
 '''
 
 EXAMPLES = '''
-
 - k5_ssl_vpn_list:
      k5_auth: "{{ k5_auth_facts }}"
 '''
@@ -37,7 +36,7 @@ RETURN = '''
                     "tenant_id": "dbbd47230bfd4e699099462cd8f51b53"
                 }
             ]
-        }, 
+        }
 '''
 
 

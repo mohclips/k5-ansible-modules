@@ -13,3 +13,6 @@ git-usage
 library
 old
 openrc
+##
+k5_router_create_ssl_vpn_v2.py
+k5_ssl_vpn_list_v2.py
