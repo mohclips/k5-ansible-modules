@@ -17,7 +17,7 @@ Number of modules: 26
   * [k5_create_subnet - create subnet on k5 in particular az](#k5_create_subnet)
   * [k5_group - create / delete groups](#k5_group)
   * [k5_inter_project_link - create inter-project link on k5 in particular az](#k5_inter_project_link)
-  * [k5_key_container_list - list key metadata containers](#k5_key_container_list)
+  * [k5_key_container_delete - delete a key metadata container](#k5_key_container_delete)
   * [k5_key_container_list - list key metadata containers](#k5_key_container_list)
   * [k5_key_delete - list key metadata containers](#k5_key_delete)
   * [k5_key_list - display](#k5_key_list)
@@ -26,7 +26,7 @@ Number of modules: 26
   * [k5_novnc_console - display the url to the novnc console](#k5_novnc_console)
   * [k5_project - create / delete projects](#k5_project)
   * [k5_router - create router on k5 in particular az](#k5_router)
-  * [k5_router_create_ssl_vpn - display the url to the novnc console](#k5_router_create_ssl_vpn)
+  * [k5_router_create_ssl_vpn - create an openvpn server](#k5_router_create_ssl_vpn)
   * [k5_router_create_ssl_vpn - display the url to the novnc console](#k5_router_create_ssl_vpn)
   * [k5_router_firewall - add, update or remove a firewall from a k5 router](#k5_router_firewall)
   * [k5_server_console_output - display the url to the novnc console](#k5_server_console_output)
@@ -298,27 +298,30 @@ Create inter-project link on K5 in particular AZ
 ---
 
 
-## k5_key_container_list
-List key metadata containers
+## k5_key_container_delete
+Delete a key metadata container
 
   * Synopsis
   * Options
   * Examples
 
 #### Synopsis
- returns a dict of containers
+ Delete a metadata container
 
 #### Options
 
 | Parameter     | required    | default  | choices    | comments |
 | ------------- |-------------| ---------|----------- |--------- |
+| container_id  |   yes  |    | |  The ID of the container to remove.  |
+| k5_auth  |   yes  |    | |  dict of k5_auth module output.  |
 
 
  
 #### Examples
 
 ```
-- k5_key_container_list:
+k5_key_container_delete:
+     container_id: "decafbad-1234-5678-90ab-decafbad1234"
      k5_auth: "{{ k5_auth_facts }}"
 
 ```
@@ -342,6 +345,7 @@ List key metadata containers
 
 | Parameter     | required    | default  | choices    | comments |
 | ------------- |-------------| ---------|----------- |--------- |
+| k5_auth  |   yes  |    | |  dict of k5_auth module output.  |
 
 
  
@@ -372,13 +376,16 @@ List key metadata containers
 
 | Parameter     | required    | default  | choices    | comments |
 | ------------- |-------------| ---------|----------- |--------- |
+| key_id  |   yes  |    | |  ID of the key to delete.  |
+| k5_auth  |   yes  |    | |  dict of k5_auth module output.  |
 
 
  
 #### Examples
 
 ```
-- k5_key_container_list:
+- k5_key_delete:
+     key_id: "decafbad-1234-5678-90ab-decafbad1234"
      k5_auth: "{{ k5_auth_facts }}"
 
 ```
@@ -402,6 +409,7 @@ Display
 
 | Parameter     | required    | default  | choices    | comments |
 | ------------- |-------------| ---------|----------- |--------- |
+| k5_auth  |   yes  |    | |  dict of k5_auth module output.  |
 
 
  
@@ -514,6 +522,7 @@ Display the URL to the NoVNC Console
 | Parameter     | required    | default  | choices    | comments |
 | ------------- |-------------| ---------|----------- |--------- |
 | server_name  |   yes  |    | |  Name of the server.  |
+| k5_auth  |   yes  |    | |  dict of k5_auth module output.  |
 
 
  
@@ -548,6 +557,7 @@ create / delete projects
 | ------------- |-------------| ---------|----------- |--------- |
 | status  |   yes  |    | |  present / absent  |
 | project_name  |   yes  |    | |  Name project to create / delete  |
+| k5_auth  |   yes  |    | |  dict of k5_auth module output.  |
 
 
  
@@ -605,14 +615,14 @@ Create router on K5 in particular AZ
 
 
 ## k5_router_create_ssl_vpn
-Display the URL to the NoVNC Console
+Create an OpenVPN Server
 
   * Synopsis
   * Options
   * Examples
 
 #### Synopsis
- returns a URL to the noVNC console.
+ Create an OpenVPN Server
 
 #### Options
 
@@ -633,10 +643,6 @@ Display the URL to the NoVNC Console
 #### Examples
 
 ```
-# Get novnc url
-- k5_router_create_ssl_vpn:
-     server_name: test01
-     k5_auth: "{{ k5_auth_facts }}"
 
 ```
 
