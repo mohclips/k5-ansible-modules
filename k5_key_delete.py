@@ -12,12 +12,24 @@ short_description: List key metadata containers
 version_added: "1.0"
 description:
     - returns a dict of containers
+options:
+   key_id:
+     description:
+       - ID of the key to delete.
+     required: true
+     default: None
+   k5_auth:
+     description:
+       - dict of k5_auth module output.
+     required: true
+     default: None
 requirements:
     - "python >= 2.6"
 '''
 
 EXAMPLES = '''
-- k5_key_container_list:
+- k5_key_delete:
+     key_id: "decafbad-1234-5678-90ab-decafbad1234"
      k5_auth: "{{ k5_auth_facts }}"
 '''
 
