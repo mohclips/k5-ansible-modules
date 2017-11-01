@@ -7,88 +7,67 @@ ANSIBLE_METADATA = {'status': ['preview'],
 DOCUMENTATION = '''
 ---
 module: k5_router_create_ssl_vpn
-short_description: Display the URL to the NoVNC Console
+short_description: Create an OpenVPN Server
 version_added: "1.0"
 description:
-    - returns a URL to the noVNC console.
+    - Create an OpenVPN Server
 options:
    name:
      description:
         - Name of the VPN
      required: true
      default: None
-
    router_name:
      description:
         - Name of the router to attach the SSL VPN to
      required: true
      default: None
-
    subnet_name:
      description:
         - Name of the subnet that the VON connects to inside K5
      required: true
      default: None
-
    client_cidr:
      description:
         - IP subnet of the remote clients. A NAT subnet inside K5. (not the clients actual subnet)
      required: true
      default: None
-
    availablity_zone:
      description:
         - Name of the availability zone
      required: true
      default: None
-
    ca:
      description:
         - CA key in pem format
      required: true
      default: None
-
    server_certificate:
      description:
         - server cert in pem format
      required: true
      default: None
-
    server_key:
      description:
         - server key in pem format
      required: true
      default: None
-
    dh:
      description:
         - dh in pem format
      required: true
      default: None
 
-
-
 requirements:
     - "python >= 2.6"
 '''
 
+#TODO
 EXAMPLES = '''
-# Get novnc url
-- k5_router_create_ssl_vpn:
-     server_name: test01
-     k5_auth: "{{ k5_auth_facts }}"
 '''
 
+#TODO
 RETURN = '''
-k5_novnc_console_facts
-    description: Dictionary describing the novnc details.
-    returned: On success when the server is found
-    type: dictionary
-    contains:
-        id:
-            description: Router ID.
-            type: string
-            sample: "474acfe5-be34-494c-b339-50f06aa143e4"
 '''
 
 
