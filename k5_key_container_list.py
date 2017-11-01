@@ -11,6 +11,12 @@ short_description: List key metadata containers
 version_added: "1.0"
 description:
     - returns a dict of containers
+options:
+   k5_auth:
+     description:
+       - dict of k5_auth module output.
+     required: true
+     default: None
 requirements:
     - "python >= 2.6"
 '''
