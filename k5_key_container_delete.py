@@ -7,49 +7,31 @@ ANSIBLE_METADATA = {'status': ['preview'],
 DOCUMENTATION = '''
 ---
 # TODO
-module: k5_key_container_list
-short_description: List key metadata containers
+module: k5_key_container_delete
+short_description: Delete a key metadata container
 version_added: "1.0"
 description:
-    - returns a dict of containers
+    - Delete a metadata container
+options:
+   container_id:
+     description:
+       - The ID of the container to remove.
+     required: true
+     default: None
+   k5_auth:
+     description:
+       - dict of k5_auth module output.
+     required: true
+     default: None
 requirements:
     - "python >= 2.6"
 '''
 
 EXAMPLES = '''
-- k5_key_container_list:
+k5_key_container_delete:
+     container_id: "decafbad-1234-5678-90ab-decafbad1234"
      k5_auth: "{{ k5_auth_facts }}"
 '''
-
-RETURN = '''
-# TODO
-k5_key_container_list
-    description: Dictionary describing the novnc details.
-    returned: On success when the server is found
-    type: dictionary
-    contains:
-        list:
-            name: container_ref
-            description:
-            type:
-            sample:  https://keymanagement.uk-1.cloud.global.fujitsu.com/v1/dbbd47230bfd4e699099462cd8f51b53/containers/0a561620-3e4d-47e7-9b2d-77fc59b7395f
-#TODO
-created: '2017-04-13T08:55:13.241314'
-name: Rail_VPN_1_container
-secret_refs:
-- name: ca
-  secret_id: 8c1b3826-b653-4f07-9543-3db7f0be6b6a
-- name: server_certificate
-  secret_id: e05a9e43-d07d-4835-a635-9a976e2f88b0
-- name: server_key
-  secret_id: eb17318f-bd3d-41a2-a0fc-d0a75a4c522a
-- name: dh
-  secret_id: ad556fcd-a506-4ceb-8d81-42da2589be45
-status: ACTIVE
-type: generic
-updated: '2017-04-13T08:55:13.241325'
-'''
-
 
 import requests
 import os
