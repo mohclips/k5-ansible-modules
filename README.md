@@ -70,3 +70,15 @@ Many thanks to the following people:
 * Kenny Brown
 * Peter Beverley
 
+
+# Windows Version
+
+## Is there a Windows PowerShell version of this?
+
+Well of course there is...
+
+See Steve Atherton's code here:  https://github.com/athertonsp/k5-powershell-functions and https://github.com/athertonsp/PowerShell-Scripts-for-K5
+
+
+
+
