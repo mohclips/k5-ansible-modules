@@ -52,6 +52,9 @@ options:
         - Defined addresses or subnets which are allowed to bypass the OpenStack Anti-spoofing for this one interface. Usually defined as an individual host, a subnet. 0.0.0.0/0 is not permitted (use 0.0.0.0/1 and 128.0.0.1/1 instead)
      required: false
      default: None
+   mac_address:
+     description:
+        - The MAC addres to assign to the port
    k5_auth:
      description:
        - dict of k5_auth module output.
@@ -86,6 +89,7 @@ EXAMPLES = '''
         allowed_address_pairs:
           - "0.0.0.0/1"
           - "128.0.0.1/1"
+        mac_address: "de:ca:fb:ad:00:11"
         k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
 '''
 
@@ -378,6 +382,7 @@ def k5_create_port(module):
     fixed_ip = module.params['fixed_ip']
     security_groups = module.params['security_groups']
     allowed_address_pairs = module.params['allowed_address_pairs']
+    mac_address = module.params['mac_address']
 
     check_port = k5_check_port_exists(module, k5_facts)
     if check_port and 'id' in check_port:
@@ -435,6 +440,9 @@ def k5_create_port(module):
     if allowed_address_pairs != '' and allowed_address_pairs != None:
         port_config["allowed_address_pairs"] = allowed_address_pairs
 
+    if mac_address != '' and mac_address != None:
+        port_config["mac_address"] = mac_address
+
     if fixed_ip != None and fixed_ip != '':
         port_config["fixed_ips"] = []
         for ip_address in fixed_ip:
@@ -479,6 +487,7 @@ def main():
         security_groups = dict(required=True, default=None, type='list'),
         availability_zone = dict(required=True, default=None, type='str'),
         allowed_address_pairs = dict(required=False, default=None, type='list'),
+        mac_address = dict(required=False, default=None, type='str'),
         k5_auth = dict(required=True, default=None, type='dict')
     ) )
 
