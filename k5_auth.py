@@ -154,11 +154,12 @@ import os_client_config
 
 #useful items to use later in other modules
 k5_auth_spec = dict(
-    os_username=None, 
-    os_password=None, 
-    os_region_name=None, 
-    os_project_id=None, 
-    os_user_domain=None 
+    os_username=None,
+    os_password=None,
+    os_region_name=None,
+    os_project_id=None,
+    os_project_name=None,
+    os_user_domain=None
 )
 
 k5_endpoints = dict(
@@ -336,9 +337,7 @@ def k5_get_auth_spec(module):
 
     if 'project_name' in mp and mp['project_name']:
         k5_auth_spec['os_project_name'] = mp['project_name']
-    elif OS_PROJECT_NAME is None:
-        module.fail_json(msg= 'param project_name or OS_PROJECT_NAME environment variable is missing', k5_auth_facts=k5_debug)
-    else:
+    elif OS_PROJECT_NAME is not None:
         k5_auth_spec['os_project_name'] = OS_PROJECT_NAME
 
     if 'project_id' in mp and mp['project_id']:
@@ -474,11 +473,11 @@ def k5_get_auth_token(module):
         "token_type": module.params['token_type'].lower(),
         "auth_spec": k5_auth_spec,
         "endpoints": k5_endpoints,
-        "issued": resp['issued_at'], 
+        "issued": resp['issued_at'],
         "expiry": resp['expires_at'],
         "roles": resp['roles'],
         "user": resp['user'],
-        "catalog": resp['catalog'], 
+        "catalog": resp['catalog'],
         "scoped": module.params['scoped'],
         "K5_DEBUG": k5_debug
     }
@@ -495,7 +494,7 @@ def main():
     module = AnsibleModule( argument_spec=dict(
         username = dict(required=False, default=None, type='str'),
         password = dict(required=False, default=None, type='str', no_log=True),
-        user_domain = dict(required=False, default=None, type='str'), 
+        user_domain = dict(required=False, default=None, type='str'),
         project_id = dict(required=False, default=None, type='str'),
         project_name = dict(required=False, default=None, type='str'),
         region_name = dict(required=False, default=None, type='str'),
@@ -508,7 +507,7 @@ def main():
 
 ######################################################################################
 
-if __name__ == '__main__':  
+if __name__ == '__main__':
     main()
 
 
