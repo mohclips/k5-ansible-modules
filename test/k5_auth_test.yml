@@ -82,3 +82,20 @@
 
       tags: global_tests
 
+    - name: "Project Name Test"
+      block:
+        - k5_auth:
+            token_type: regional
+            scoped: true
+            project_name: "scratch09b"
+          register: project_auth
+          environment:
+            # unset this, so we only use the project_name
+            OS_PROJECT_ID: ""
+      
+        - debug:
+           msg:
+            - "Token: {{ project_auth.k5_auth_facts.auth_token }}"
+            #- "user.domain: {{ project_auth.k5_auth_facts.user.domain.id }}"
+
+      tags: project_name_tests
