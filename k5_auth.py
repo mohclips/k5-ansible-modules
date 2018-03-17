@@ -335,6 +335,14 @@ def k5_get_auth_spec(module):
     else:
         k5_auth_spec['os_region_name'] = OS_REGION_NAME
 
+    if 'user_domain' in mp and mp['user_domain']:
+        k5_auth_spec['os_user_domain'] = mp['user_domain']
+    elif OS_USER_DOMAIN_NAME is None:
+        module.fail_json(msg= 'param user_domain or OS_USER_DOMAIN_NAME environment variable is missing', k5_auth_facts=k5_debug)
+    else:
+        k5_auth_spec['os_user_domain'] = OS_USER_DOMAIN_NAME
+
+    # Note that these two fields won't error here, but do below after the scope is build
     if 'project_name' in mp and mp['project_name']:
         k5_auth_spec['os_project_name'] = mp['project_name']
     elif OS_PROJECT_NAME is not None:
@@ -344,13 +352,6 @@ def k5_get_auth_spec(module):
         k5_auth_spec['os_project_id'] = mp['project_id']
     elif OS_PROJECT_ID is not None:
         k5_auth_spec['os_project_id'] = OS_PROJECT_ID
-
-    if 'user_domain' in mp and mp['user_domain']:
-        k5_auth_spec['os_user_domain'] = mp['user_domain']
-    elif OS_USER_DOMAIN_NAME is None:
-        module.fail_json(msg= 'param user_domain or OS_USER_DOMAIN_NAME environment variable is missing', k5_auth_facts=k5_debug)
-    else:
-        k5_auth_spec['os_user_domain'] = OS_USER_DOMAIN_NAME
     
     k5_debug_add('os_username: {0}'.format(k5_auth_spec['os_username']))
 #    k5_debug_add('os_password: {0}'.format(k5_auth_spec['os_password']))
@@ -374,7 +375,28 @@ def k5_get_auth_token(module):
     url = k5_endpoints['identity'] + '/v3/auth/tokens'
 
     # note 'scope' is missing
-    if 'os_project_name' in k5_auth_spec and k5_auth_spec['os_project_name'] is not None:
+    if 'os_project_id' in k5_auth_spec and k5_auth_spec['os_project_id'] is not None:
+        query_json = {'auth': {
+                                'identity': {
+                                    'methods': ['password'],
+                                    'password': {
+                                        'user': {
+                                            'domain': {
+                                                'name': k5_auth_spec['os_user_domain']
+                                            },
+                                            'name': k5_auth_spec['os_username'],
+                                            'password': k5_auth_spec['os_password']
+                                        }
+                                    }
+                                },
+                                "scope": {
+                                    "project": {
+                                        "id": k5_auth_spec['os_project_id']
+                                    }
+                                }
+                           }
+                        }
+    elif 'os_project_name' in k5_auth_spec and k5_auth_spec['os_project_name'] is not None:
         query_json = {'auth': {
                                 'identity': {
                                     'methods': ['password'],
@@ -394,28 +416,6 @@ def k5_get_auth_token(module):
                                         "domain": {
                                             'name': k5_auth_spec['os_user_domain']
                                         }
-                                    }
-                                }
-                           }
-                        }
-
-    elif 'os_project_id' in k5_auth_spec and k5_auth_spec['os_project_id'] is not None:
-        query_json = {'auth': {
-                                'identity': {
-                                    'methods': ['password'],
-                                    'password': {
-                                        'user': {
-                                            'domain': {
-                                                'name': k5_auth_spec['os_user_domain']
-                                            },
-                                            'name': k5_auth_spec['os_username'],
-                                            'password': k5_auth_spec['os_password']
-                                        }
-                                    }
-                                },
-                                "scope": {
-                                    "project": {
-                                        "id": k5_auth_spec['os_project_id']
                                     }
                                 }
                            }
