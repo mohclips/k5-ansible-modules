@@ -27,7 +27,7 @@
         state: list
         k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
       register: projects
-#    - debug: var=projects
+    - debug: var=projects
 
     - name: Create New Project
       k5_project:
@@ -49,7 +49,7 @@
         state: list
         k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
       register: projects
-#    - debug: var=projects
+    - debug: var=projects
 
     - name: Disable project
       k5_project:
@@ -64,7 +64,7 @@
         state: list
         k5_auth: "{{ k5_auth_reg.k5_auth_facts }}"
       register: projects
-#    - debug: var=projects
+    - debug: var=projects
 
     - name: Enable project
       k5_project:
