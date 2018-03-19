@@ -337,8 +337,6 @@ def k5_get_auth_spec(module):
 
     # now overwrite the vars if provided within the playbook module
 
-    module.warn(str(mp))
-
     if 'username' in mp and mp['username']:
         k5_auth_spec['os_username'] = mp['username']
     elif OS_USERNAME is None:
