@@ -355,7 +355,7 @@ def k5_get_auth_spec(module):
 
     if 'region_name' in mp and mp['region_name']:
         k5_auth_spec['os_region_name'] = mp['region_name']
-    elif 'auth_url' in cloud_config.auth and cloud_config.auth['auth_url']:
+    elif OS_REGION_NAME == "" and 'auth_url' in cloud_config.auth and cloud_config.auth['auth_url']:
         match = re.search('https://identity\.([^\.]*)\.cloud.global.fujitsu.com', cloud_config.auth['auth_url'])
         k5_auth_spec['os_region_name'] = match.group(1)
     elif OS_REGION_NAME == "":
