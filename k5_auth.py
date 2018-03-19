@@ -155,6 +155,8 @@ import os_client_config
 import sys
 import keystoneauth1.exceptions
 
+import re
+
 #useful items to use later in other modules
 k5_auth_spec = dict(
     os_username=None,
@@ -328,12 +330,12 @@ def k5_get_auth_spec(module):
             OS_PROJECT_NAME = cloud_config.auth['project_name']
         if 'project_id' in cloud_config.auth and cloud_config.auth['project_id']:
             OS_PROJECT_ID = cloud_config.auth['project_id']
+        if 'domain_name' in cloud_config.auth and cloud_config.auth['domain_name']:
+            OS_USER_DOMAIN_NAME = cloud_config.auth['domain_name']
         if 'user_domain_name' in cloud_config.auth and cloud_config.auth['user_domain_name']:
             OS_USER_DOMAIN_NAME = cloud_config.auth['user_domain_name']
 
     # now overwrite the vars if provided within the playbook module
-
-    module.warn(str(mp))
 
     if 'username' in mp and mp['username']:
         k5_auth_spec['os_username'] = mp['username']
@@ -351,7 +353,10 @@ def k5_get_auth_spec(module):
 
     if 'region_name' in mp and mp['region_name']:
         k5_auth_spec['os_region_name'] = mp['region_name']
-    elif OS_REGION_NAME is None:
+    elif OS_REGION_NAME == "" and 'auth_url' in cloud_config.auth and cloud_config.auth['auth_url']:
+        match = re.search('https://identity\.([^\.]*)\.cloud.global.fujitsu.com', cloud_config.auth['auth_url'])
+        k5_auth_spec['os_region_name'] = match.group(1)
+    elif OS_REGION_NAME == "":
         module.fail_json(msg='param region_name or OS_REGION_NAME environment variable is missing', k5_auth_facts=k5_debug)
     else:
         k5_auth_spec['os_region_name'] = OS_REGION_NAME
