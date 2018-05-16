@@ -235,7 +235,7 @@ def main():
     module = AnsibleModule( argument_spec=dict(
         state = dict(choices=['list', 'present', 'absent' ], default='list'),
         name = dict(default=None, type='str'), 
-        policies = dict(choices=[['affinity'], ['anti-affinity']], default=None, type='list'), 
+        policies = dict(required=False, type='list'),
         availability_zone = dict(default=None, type='str'), 
         k5_auth = dict(required=True,default=None, type='dict')
     ),
