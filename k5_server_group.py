@@ -8,7 +8,7 @@ ANSIBLE_METADATA = {'status': ['preview'],
 
 DOCUMENTATION = '''
 ---
-module: k5_servergroup
+module: k5_server_group
 short_description: create / delete / list server groups
 version_added: "1.0"
 description:
@@ -26,7 +26,7 @@ options:
      default: None
    policies:
      description:
-        - one of either affinity or anti-affinity 
+        - one of either affinity or anti-affinity
      required: true
      default: None
    availability_zone:
@@ -40,12 +40,18 @@ requirements:
 '''
 
 EXAMPLES = '''
-- k5_servergroup:
+- k5_server_group:
     name: MyServerGroup
     status: present
-    policies: affinity
+    policies:
+      - affinity
     availability_zone: uk-1a
     k5_auth: "{{ k5_auth_facts }}"
+
+- k5_server_group:
+    status: list
+    k5_auth: "{{ k5_auth_facts }}"
+  register: affinity_groups
 '''
 
 RETURN = '''
@@ -234,9 +240,9 @@ def main():
 
     module = AnsibleModule( argument_spec=dict(
         state = dict(choices=['list', 'present', 'absent' ], default='list'),
-        name = dict(default=None, type='str'), 
-        policies = dict(choices=[['affinity'], ['anti-affinity']], default=None, type='list'), 
-        availability_zone = dict(default=None, type='str'), 
+        name = dict(default=None, type='str'),
+        policies = dict(choices=['affinity', 'anti-affinity'], default=None, type='list'),
+        availability_zone = dict(default=None, type='str'),
         k5_auth = dict(required=True,default=None, type='dict')
     ),
         # constraints
