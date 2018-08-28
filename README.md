@@ -1,3 +1,5 @@
+> **Note:** The K5 Ansible Modules repository is no being actively developed.  It is still accepting pull requests though.
+
 # Intro
 
 This git repository contains examples of how to create infrastructure as code on the Fujitsu K5 Cloud.
@@ -52,9 +54,15 @@ Or use the parameters in `k5_auth`.
 ### clouds.y(a)ml / secure.y(a)ml
 See the example files in Examples/clouds.yml and Examples/secure.yml.example
 
+### openstacksdk - IMPORTNAT
+
+**Note:** From Ansible v2.6+ the openstack communications library is the openstaksdk.
+
+The openstacksdk library uses the volume version API call which is not supported by the current version of K5 (as of August 2018).  Thus any calls to the Ansible `os_volume` module will fail.  The only way around this is write a `k5_volume` module that does not call the version API call.  **Pull requests accepted :)**
+
 ### shade - IMPORTANT
 
-The python shade library needs to be at or below 1.13.2
+The python shade library needs to be at or below 1.13.2 - **When you are using Ansible <= 2.5**
 
 This is because K5 API does not support the GET / request to the image endpoint as per https://developer.openstack.org/api-ref/image/versions/index.html
 
